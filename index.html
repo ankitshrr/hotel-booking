@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,13 +10,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="app-container">
         <header class="app-header">
             <div class="header-left">
                 <h1>ROOM.MANAGER <span class="badge">PRO</span></h1>
             </div>
-            
+
             <div class="header-center">
                 <div class="stats-dashboard" id="statsDashboard">
                     <!-- Stats injected by JS -->
@@ -37,7 +39,7 @@
                     <button id="btnToday" class="btn-minimal">This Month</button>
                     <input type="month" id="jumpMonth" class="input-minimal" title="Jump to Month">
                 </div>
-                
+
                 <div class="toolbar-right">
                     <select id="roomFilter" class="input-minimal">
                         <option value="all">All Rooms</option>
@@ -48,32 +50,43 @@
                     </select>
                     <input type="text" id="guestSearch" class="input-minimal" placeholder="Search guest...">
                     <input type="file" id="fileImport" accept=".xlsx,.xlsb,.xls" style="display: none;">
-                     <div style="display: flex; align-items: center;">
-                         <button id="btnFileMenu" class="btn-minimal" style="border: none; border-radius: 4px; background: rgba(255,255,255,0.1); color: var(--text-light); padding: 0.5rem 1rem;" title="File Menu">
-                             📁 File
-                         </button>
-                     </div>
-                     <!-- File Modal (glassmorphism) -->
-                     <div class="modal-overlay" id="fileModal" style="background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);">
-                         <div class="modal" style="max-width: 340px; background: rgba(10,10,10,0.85); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1.5rem;">
-                             <div class="modal-header" style="display: flex; justify-content: flex-end;">
-                                 <button class="close-btn" id="closeFileModal">&times;</button>
-                             </div>
-                             <div class="modal-body" style="display: flex; flex-direction: column; gap: 0.75rem;">
-                                 <button id="btnNewFile" class="btn-minimal" style="width: 100%; background: transparent; border: 1px solid var(--glass-border); color: var(--text-light);" title="Create New .XLSX">
-                                     ✚ New File
-                                 </button>
-                                 <button id="btnImport" class="btn-minimal" style="width: 100%; background: transparent; border: 1px solid var(--glass-border); color: var(--text-light);" title="Import .XLSX">
-                                     ⬆️ Import File
-                                 </button>
-                                 <button id="btnExport" class="btn-minimal" style="width: 100%; background: var(--color-booked-bg); color: var(--color-booked); border: 1px solid var(--color-booked);" title="Save .XLSX">
-                                     💾 Export
-                                 </button>
-                             </div>
-                         </div>
-                     </div>
+                    <div style="display: flex; align-items: center;">
+                        <button id="btnFileMenu" class="btn-minimal"
+                            style="border: none; border-radius: 4px; background: rgba(255,255,255,0.1); color: var(--text-light); padding: 0.5rem 1rem;"
+                            title="File Menu">
+                            📁 File
+                        </button>
+                    </div>
+                    <!-- File Modal (glassmorphism) -->
+                    <div class="modal-overlay" id="fileModal"
+                        style="background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);">
+                        <div class="modal"
+                            style="max-width: 340px; background: rgba(10,10,10,0.85); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1.5rem;">
+                            <div class="modal-header" style="display: flex; justify-content: flex-end;">
+                                <button class="close-btn" id="closeFileModal">&times;</button>
+                            </div>
+                            <div class="modal-body" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                <button id="btnNewFile" class="btn-minimal"
+                                    style="width: 100%; background: transparent; border: 1px solid var(--glass-border); color: var(--text-light);"
+                                    title="Create New .XLSX">
+                                    ✚ New File
+                                </button>
+                                <button id="btnImport" class="btn-minimal"
+                                    style="width: 100%; background: transparent; border: 1px solid var(--glass-border); color: var(--text-light);"
+                                    title="Import .XLSX">
+                                    ⬆️ Import File
+                                </button>
+                                <button id="btnExport" class="btn-minimal"
+                                    style="width: 100%; background: var(--color-booked-bg); color: var(--color-booked); border: 1px solid var(--color-booked);"
+                                    title="Save .XLSX">
+                                    💾 Export
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     <button id="btnCalc" class="btn-minimal" style="display: flex; align-items: center; gap: 0.4rem;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
                             <line x1="8" y1="8" x2="16" y2="8"></line>
                             <line x1="8" y1="12" x2="8.01" y2="12"></line>
@@ -157,47 +170,61 @@
         <div class="modal" style="max-width: 450px; padding: 0;">
             <div style="padding: 1.5rem; border-bottom: 1px solid var(--glass-border);">
                 <h2 style="font-size: 1.25rem; margin-bottom: 1rem;">Payment Calculator</h2>
-                
-                <div style="display: flex; gap: 0.5rem; background: #000; padding: 0.35rem; border-radius: 6px; border: 1px solid var(--glass-border);">
-                    <button id="tabUsd" class="btn-minimal" style="flex: 1; background: #222; border-color: transparent; font-weight: 700; color: #fff;">💳 Card Payment</button>
-                    <button id="tabInr" class="btn-minimal" style="flex: 1; border-color: transparent; color: var(--text-muted);">💵 Indian Cash</button>
+
+                <div
+                    style="display: flex; gap: 0.5rem; background: #000; padding: 0.35rem; border-radius: 6px; border: 1px solid var(--glass-border);">
+                    <button id="tabUsd" class="btn-minimal"
+                        style="flex: 1; background: #222; border-color: transparent; font-weight: 700; color: #fff;">💳
+                        Card Payment</button>
+                    <button id="tabInr" class="btn-minimal"
+                        style="flex: 1; border-color: transparent; color: var(--text-muted);">💵 Indian Cash</button>
                 </div>
             </div>
-            
+
             <div style="padding: 1.5rem;">
                 <!-- USD View -->
                 <div id="viewUsd">
-                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">Calculates total for physical card payment (+4% POS charge).</p>
-                    
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">Calculates total
+                        for physical card payment (+4% POS charge).</p>
+
                     <div class="form-group" style="display: flex; gap: 1rem; margin-bottom: 1rem;">
                         <div style="flex: 1;">
                             <label style="display: block; margin-bottom: 0.35rem;">Bill Amount (USD):</label>
-                            <input type="number" id="calcUsdAmount" class="input-minimal" placeholder="0.00" style="width: 100%; font-size: 1.1rem;">
+                            <input type="number" id="calcUsdAmount" class="input-minimal" placeholder="0.00"
+                                style="width: 100%; font-size: 1.1rem;">
                         </div>
                         <div style="flex: 1;">
                             <label style="display: block; margin-bottom: 0.35rem;">Live Rate:</label>
-                            <input type="number" id="calcUsdRate" class="input-minimal" placeholder="..." style="width: 100%; font-size: 1.1rem;">
+                            <input type="number" id="calcUsdRate" class="input-minimal" placeholder="..."
+                                style="width: 100%; font-size: 1.1rem;">
                         </div>
                     </div>
 
-                    <div style="text-align: center; color: var(--text-muted); margin-bottom: 1rem; font-size: 0.85rem; font-weight: 600;">— OR —</div>
+                    <div
+                        style="text-align: center; color: var(--text-muted); margin-bottom: 1rem; font-size: 0.85rem; font-weight: 600;">
+                        — OR —</div>
 
                     <div class="form-group" style="margin-bottom: 1.5rem;">
                         <label style="display: block; margin-bottom: 0.35rem;">Direct Bill Amount (Nepali NPR):</label>
-                        <input type="number" id="calcNprDirectAmount" class="input-minimal" placeholder="0.00" style="width: 100%; font-size: 1.1rem;">
+                        <input type="number" id="calcNprDirectAmount" class="input-minimal" placeholder="0.00"
+                            style="width: 100%; font-size: 1.1rem;">
                     </div>
 
-                    <div style="background: #0a0a0a; padding: 1.25rem; border: 1px solid var(--glass-border); border-radius: 6px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--text-muted);">
+                    <div
+                        style="background: #0a0a0a; padding: 1.25rem; border: 1px solid var(--glass-border); border-radius: 6px;">
+                        <div
+                            style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--text-muted);">
                             <span>NPR Subtotal:</span>
                             <span id="calcUsdSubtotal">Rs. 0.00</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: #fb923c;">
+                        <div
+                            style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: #fb923c;">
                             <span>POS Surcharge (4%):</span>
                             <span id="calcUsdSurcharge">Rs. 0.00</span>
                         </div>
                         <hr style="border: 0; border-top: 1px dashed var(--glass-border); margin: 0.75rem 0;">
-                        <div style="display: flex; justify-content: space-between; font-size: 1.25rem; font-weight: 800; color: #fff;">
+                        <div
+                            style="display: flex; justify-content: space-between; font-size: 1.25rem; font-weight: 800; color: #fff;">
                             <span>Charge on POS:</span>
                             <span id="calcUsdTotal">Rs. 0.00</span>
                         </div>
@@ -206,20 +233,25 @@
 
                 <!-- INR View -->
                 <div id="viewInr" style="display: none;">
-                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">Calculates INR cash to collect from guest based on 1.5 rate.</p>
-                    
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">Calculates INR cash
+                        to collect from guest based on 1.5 rate.</p>
+
                     <div class="form-group" style="margin-bottom: 1.5rem;">
                         <label style="display: block; margin-bottom: 0.35rem;">Bill Amount (Nepali NPR):</label>
-                        <input type="number" id="calcInrNprAmount" class="input-minimal" placeholder="0.00" style="width: 100%; font-size: 1.25rem; text-align: center;">
+                        <input type="number" id="calcInrNprAmount" class="input-minimal" placeholder="0.00"
+                            style="width: 100%; font-size: 1.25rem; text-align: center;">
                     </div>
 
-                    <div style="background: #0a0a0a; padding: 1.25rem; border: 1px solid var(--glass-border); border-radius: 6px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--text-muted);">
+                    <div
+                        style="background: #0a0a0a; padding: 1.25rem; border: 1px solid var(--glass-border); border-radius: 6px;">
+                        <div
+                            style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--text-muted);">
                             <span>Exchange Rate:</span>
                             <span>1 INR = 1.5 NPR</span>
                         </div>
                         <hr style="border: 0; border-top: 1px dashed var(--glass-border); margin: 0.75rem 0;">
-                        <div style="display: flex; justify-content: space-between; font-size: 1.25rem; font-weight: 800; color: #4ade80;">
+                        <div
+                            style="display: flex; justify-content: space-between; font-size: 1.25rem; font-weight: 800; color: #4ade80;">
                             <span>Collect (INR):</span>
                             <span id="calcInrTotal">₹ 0.00</span>
                         </div>
@@ -239,4 +271,5 @@
 
     <script src="app.js?v=6"></script>
 </body>
+
 </html>

@@ -29,6 +29,7 @@
                     <div class="legend-item"><span class="color-box booked"></span> Booked</div>
                     <div class="legend-item"><span class="color-box check-in"></span> In</div>
                     <div class="legend-item"><span class="color-box check-out"></span> Out</div>
+                    <div class="legend-item"><span class="color-box closed"></span> Closed</div>
                 </div>
             </div>
         </header>
@@ -151,6 +152,7 @@
                     <button class="btn btn-booked" id="btnBooked">Mark as Booked</button>
                     <button class="btn btn-checkin" id="btnCheckIn">Check In (Orange)</button>
                     <button class="btn btn-checkout" id="btnCheckOut">Check Out (Green)</button>
+                    <button class="btn btn-closed" id="btnClosed">Close / Block Room</button>
                     <button class="btn btn-available" id="btnClear">Clear / Make Available</button>
                 </div>
             </div>
@@ -162,6 +164,7 @@
     <div id="contextMenu" class="context-menu">
         <div class="context-menu-item" id="ctxCheckIn">Check In (Orange)</div>
         <div class="context-menu-item" id="ctxCheckOut">Check Out (Green)</div>
+        <div class="context-menu-item" id="ctxClosed">Close / Block Room</div>
         <div class="context-menu-item" id="ctxClear">Clear Booking</div>
     </div>
 
@@ -269,7 +272,7 @@
     <!-- SheetJS for XLSB Export -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
-    <script src="app.js?v=6"></script>
+    <script src="app.js?v=7"></script>
 </body>
 
 </html>

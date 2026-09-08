@@ -129,14 +129,14 @@
             </div>
             <div class="modal-body">
                 <p class="modal-subtitle" id="modalSubtitle">Room 204 - 26 Aug</p>
-                <div class="form-group row-group">
-                    <div class="input-half">
+                <div class="modal-grid">
+                    <div class="form-group">
                         <label for="guestName">Guest Name</label>
-                        <input type="text" id="guestName" placeholder="e.g. Ankit" autocomplete="off">
+                        <input type="text" id="guestName" placeholder="e.g. Ankit" autocomplete="off" class="input-minimal">
                     </div>
-                    <div class="input-half">
+                    <div class="form-group">
                         <label for="numNights">Nights</label>
-                        <select id="numNights" class="nights-select">
+                        <select id="numNights" class="nights-select input-minimal" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); padding: 0.75rem; border-radius: 8px; font-size: 1rem; color: #fff;">
                             <option value="1">1 Night</option>
                             <option value="2">2 Nights</option>
                             <option value="3">3 Nights</option>
@@ -144,11 +144,54 @@
                             <option value="5">5 Nights</option>
                             <option value="6">6 Nights</option>
                             <option value="7">7 Nights</option>
-                            <option value="14">14 Nights</option>
                         </select>
                     </div>
+
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Source</label>
+                        <div style="display: flex; width: 100%;">
+                            <select id="bookingSource" class="input-minimal" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); padding: 0.75rem; border-radius: 8px; font-size: 1rem; color: #fff;">
+                                <option value="Walk-in">Walk-in</option>
+                                <option value="Phone/Direct">Phone</option>
+                                <option value="Booking.com">Booking.com</option>
+                                <option value="Agoda">Agoda</option>
+                                <option value="Expedia">Expedia</option>
+                                <option value="Other">Other...</option>
+                            </select>
+                            <div id="bookingSourceOtherContainer" style="display: none; width: 100%; position: relative;">
+                                <input type="text" id="bookingSourceOther" placeholder="Type source..." class="input-minimal" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); padding: 0.75rem; border-radius: 8px; color: #fff; padding-right: 2.5rem;">
+                                <span id="resetSourceBtn" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-light); font-size: 1.5rem; line-height: 1;">&times;</span>
+                            </div>
+                        </div>
+                    </div>
+                    
                 </div>
+
+                <div class="modal-toggles">
+                    <div class="toggle-wrap">
+                        <input type="checkbox" id="extraBed">
+                        <label for="extraBed">Extra Bed</label>
+                    </div>
+                    <div class="toggle-wrap">
+                        <input type="checkbox" id="showGroupBooking">
+                        <label for="showGroupBooking">Group Booking</label>
+                    </div>
+                </div>
+                
+                <div class="form-group" id="extraBedChargeContainer" style="display: none; margin-bottom: 1rem;">
+                    <label for="extraBedCharge">Extra Bed Charge (Rs.)</label>
+                    <input type="number" id="extraBedCharge" placeholder="e.g. 1000" class="input-minimal" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); padding: 0.75rem; border-radius: 8px; color: var(--text-light);">
+                </div>
+
+                <div class="form-group" id="groupBookingContainer" style="display: none; margin-bottom: 1rem;">
+                    <label>Additional Rooms</label>
+                    <div id="additionalRoomsContainer" class="multi-select-container">
+                        <!-- Checkboxes will be injected here by JS -->
+                    </div>
+                </div>
+
                 <div class="action-buttons">
+                    <button class="btn" id="btnDelete" style="display: none; background: #ef4444; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer;">Delete</button>
                     <button class="btn btn-booked" id="btnBooked">Mark as Booked</button>
                     <button class="btn btn-checkin" id="btnCheckIn">Check In (Orange)</button>
                     <button class="btn btn-checkout" id="btnCheckOut">Check Out (Green)</button>

@@ -361,6 +361,11 @@ input[type=number] {
     background: #111;
 }
 
+.day-cell.drag-over {
+    background: #1e293b;
+    box-shadow: inset 0 0 0 2px var(--accent);
+}
+
 .booking-content {
     width: 100%;
     height: 100%;
@@ -375,6 +380,16 @@ input[type=number] {
     word-break: break-word;
     animation: zoomIn 0.3s ease;
     user-select: none;
+}
+
+.booking-content[draggable="true"] {
+    cursor: grab;
+}
+.booking-content[draggable="true"]:active {
+    cursor: grabbing;
+}
+.booking-content.dragging {
+    opacity: 0.5;
 }
 
 .status-booked { background: var(--color-booked-bg); color: var(--color-booked); border: 1px solid rgba(96, 165, 250, 0.3); font-weight: 600; }
@@ -450,11 +465,48 @@ input[type=number] {
     border: 1px solid var(--glass-border);
     border-radius: 20px;
     width: 90%;
-    max-width: 400px;
+    max-width: 480px;
     padding: 2rem;
+    max-height: 90vh;
+    overflow-y: auto;
     transform: scale(0.9);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}
+
+.modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+.modal-grid .form-group {
+    margin-bottom: 0;
+}
+
+.modal-toggles {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+.toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.toggle-wrap input[type="checkbox"] {
+    width: 1.2rem;
+    height: 1.2rem;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--accent);
+}
+.toggle-wrap label {
+    margin: 0;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.9rem;
+    color: var(--text-light);
 }
 
 .modal-overlay.active .modal {
@@ -546,6 +598,61 @@ input[type=number] {
 .btn-checkout { background: var(--color-checkout-bg); color: var(--color-checkout); border: 1px solid var(--color-checkout); }
 .btn-closed { background: var(--color-closed-bg); color: var(--color-closed); border: 1px solid var(--color-closed); }
 .btn-available { background: transparent; color: #fff; border: 1px solid #333; }
+
+.multi-select-container {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    max-height: 160px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.multi-select-group-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+}
+
+.multi-select-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.multi-select-pill {
+    cursor: pointer;
+    user-select: none;
+}
+
+.multi-select-pill span {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    color: var(--text-light);
+    transition: all 0.2s;
+}
+
+.multi-select-pill:hover span {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.multi-select-pill input:checked + span {
+    background: var(--color-booked-bg);
+    color: var(--color-booked);
+    border-color: var(--color-booked);
+    box-shadow: 0 0 10px rgba(96, 165, 250, 0.2);
+}
 
 @keyframes zoomIn {
     from { opacity: 0; transform: scale(0.8); }

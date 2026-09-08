@@ -140,6 +140,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Current selection
     let activeRoomId = null;
     let activeDateIso = null;
+    
+    // Drag and Drop State
+    let draggedBlock = null;
 
     function renderTable() {
         generateDates();
@@ -202,8 +205,123 @@ document.addEventListener('DOMContentLoaded', () => {
                     const booking = bookings[cellKey];
                     
                     if (booking) {
-                        tdCell.innerHTML = `<div class="booking-content status-${booking.status}">${booking.guestName}</div>`;
+                        const extraBedIcon = booking.extraBed ? ' <span style="font-size: 0.85em; opacity: 0.8;" title="Extra Bed">🛏️</span>' : '';
+                        tdCell.innerHTML = `<div class="booking-content status-${booking.status}" draggable="true">${booking.guestName}${extraBedIcon}</div>`;
                     }
+
+                    tdCell.dataset.roomId = bed.id;
+                    tdCell.dataset.dateIso = d.iso;
+
+                    if (booking) {
+                        const content = tdCell.querySelector('.booking-content');
+                        content.addEventListener('dragstart', (e) => {
+                            const blockDates = [];
+                            let checkDate = new Date(d.iso);
+                            while (true) {
+                                checkDate.setDate(checkDate.getDate() - 1);
+                                const iso = checkDate.toISOString().split('T')[0];
+                                const key = `${bed.id}_${iso}`;
+                                if (bookings[key] && bookings[key].guestName === booking.guestName) {
+                                    blockDates.unshift(iso);
+                                } else {
+                                    break;
+                                }
+                            }
+                            blockDates.push(d.iso);
+                            checkDate = new Date(d.iso);
+                            while (true) {
+                                checkDate.setDate(checkDate.getDate() + 1);
+                                const iso = checkDate.toISOString().split('T')[0];
+                                const key = `${bed.id}_${iso}`;
+                                if (bookings[key] && bookings[key].guestName === booking.guestName) {
+                                    blockDates.push(iso);
+                                } else {
+                                    break;
+                                }
+                            }
+
+                            draggedBlock = {
+                                roomId: bed.id,
+                                guestName: booking.guestName,
+                                status: booking.status,
+                                dates: blockDates,
+                                dragAnchorIso: d.iso
+                            };
+
+                            setTimeout(() => content.classList.add('dragging'), 0);
+                            e.dataTransfer.effectAllowed = 'move';
+                            e.dataTransfer.setData('text/plain', booking.guestName);
+                        });
+
+                        content.addEventListener('dragend', () => {
+                            content.classList.remove('dragging');
+                            draggedBlock = null;
+                            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+                        });
+                    }
+
+                    tdCell.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        if (!draggedBlock) return;
+                        e.dataTransfer.dropEffect = 'move';
+                        tdCell.classList.add('drag-over');
+                    });
+
+                    tdCell.addEventListener('dragleave', () => {
+                        tdCell.classList.remove('drag-over');
+                    });
+
+                    tdCell.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        tdCell.classList.remove('drag-over');
+                        if (!draggedBlock) return;
+
+                        const dropRoomId = tdCell.dataset.roomId;
+                        const dropDateIso = tdCell.dataset.dateIso;
+
+                        if (dropRoomId === draggedBlock.roomId && dropDateIso === draggedBlock.dragAnchorIso) {
+                            return;
+                        }
+
+                        const anchorDate = new Date(draggedBlock.dragAnchorIso);
+                        const dropDate = new Date(dropDateIso);
+                        const dayShift = Math.round((dropDate - anchorDate) / (1000 * 60 * 60 * 24));
+
+                        const newDates = [];
+                        let collision = false;
+                        for (let iso of draggedBlock.dates) {
+                            const oldDate = new Date(iso);
+                            const newDateObj = new Date(oldDate.getTime() + (dayShift * 86400000));
+                            const newIso = newDateObj.toISOString().split('T')[0];
+                            newDates.push(newIso);
+
+                            const targetKey = `${dropRoomId}_${newIso}`;
+                            if (bookings[targetKey]) {
+                                if (!(dropRoomId === draggedBlock.roomId && draggedBlock.dates.includes(newIso))) {
+                                    collision = true;
+                                }
+                            }
+                        }
+
+                        if (collision) {
+                            alert('Cannot move here. The dates overlap with an existing booking!');
+                            return;
+                        }
+
+                        draggedBlock.dates.forEach(iso => {
+                            delete bookings[`${draggedBlock.roomId}_${iso}`];
+                        });
+
+                        newDates.forEach(iso => {
+                            bookings[`${dropRoomId}_${iso}`] = {
+                                guestName: draggedBlock.guestName,
+                                status: draggedBlock.status
+                            };
+                        });
+
+                        draggedBlock = null;
+                        saveAndRender();
+                    });
 
                     tdCell.addEventListener('click', () => openModal(bed, group, d, booking));
                     
@@ -388,17 +506,93 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-
     function openModal(bed, group, dateObj, existingBooking) {
         activeRoomId = bed.id;
         activeDateIso = dateObj.iso;
 
         modalSubtitle.textContent = `${group.groupDesc} (${bed.name}) — ${dateObj.label}`;
         
+        const guestNameInput = document.getElementById('guestName');
+        const numNightsSelect = document.getElementById('numNights');
+        
+        const bookingSourceInput = document.getElementById('bookingSource');
+        const bookingSourceOtherContainer = document.getElementById('bookingSourceOtherContainer');
+        const bookingSourceOtherInput = document.getElementById('bookingSourceOther');
+        const extraBedInput = document.getElementById('extraBed');
+        const extraBedChargeInput = document.getElementById('extraBedCharge');
+        const extraBedChargeContainer = document.getElementById('extraBedChargeContainer');
+        const showGroupBooking = document.getElementById('showGroupBooking');
+        const groupBookingContainer = document.getElementById('groupBookingContainer');
+        const btnDelete = document.getElementById('btnDelete');
+
+        if (showGroupBooking) showGroupBooking.checked = false;
+        if (groupBookingContainer) groupBookingContainer.style.display = 'none';
+
         if (existingBooking) {
             guestNameInput.value = existingBooking.guestName;
+            
+            if (bookingSourceInput && bookingSourceOtherContainer && bookingSourceOtherInput) {
+                const knownSources = ['Walk-in', 'Phone/Direct', 'Booking.com', 'Agoda', 'Expedia'];
+                if (existingBooking.bookingSource && !knownSources.includes(existingBooking.bookingSource)) {
+                    bookingSourceInput.style.display = 'none';
+                    bookingSourceOtherContainer.style.display = 'block';
+                    bookingSourceOtherInput.value = existingBooking.bookingSource;
+                } else {
+                    bookingSourceInput.style.display = 'block';
+                    bookingSourceOtherContainer.style.display = 'none';
+                    bookingSourceInput.value = existingBooking.bookingSource || 'Walk-in';
+                    bookingSourceOtherInput.value = '';
+                }
+            }
+            
+            if (extraBedInput) {
+                extraBedInput.checked = !!existingBooking.extraBed;
+                if (extraBedChargeContainer) extraBedChargeContainer.style.display = existingBooking.extraBed ? 'block' : 'none';
+            }
+            if (extraBedChargeInput) extraBedChargeInput.value = existingBooking.extraBedCharge || '';
+            if (btnDelete) btnDelete.style.display = 'block';
         } else {
             guestNameInput.value = '';
+            if (bookingSourceInput && bookingSourceOtherContainer && bookingSourceOtherInput) {
+                bookingSourceInput.style.display = 'block';
+                bookingSourceOtherContainer.style.display = 'none';
+                bookingSourceInput.value = 'Walk-in';
+                bookingSourceOtherInput.value = '';
+            }
+            if (extraBedInput) {
+                extraBedInput.checked = false;
+                if (extraBedChargeContainer) extraBedChargeContainer.style.display = 'none';
+            }
+            if (extraBedChargeInput) extraBedChargeInput.value = '';
+            if (btnDelete) btnDelete.style.display = 'none';
+        }
+
+        const additionalRoomsContainer = document.getElementById('additionalRoomsContainer');
+        if (additionalRoomsContainer) {
+            additionalRoomsContainer.innerHTML = '';
+            roomsConfig.forEach(g => {
+                let hasRooms = false;
+                const groupHeader = document.createElement('div');
+                groupHeader.className = 'multi-select-group-title';
+                groupHeader.textContent = g.groupDesc || g.groupName;
+                
+                const pillsContainer = document.createElement('div');
+                pillsContainer.className = 'multi-select-pills';
+
+                g.beds.forEach(b => {
+                    if (b.id === bed.id) return;
+                    hasRooms = true;
+                    const lbl = document.createElement('label');
+                    lbl.className = 'multi-select-pill';
+                    lbl.innerHTML = `<input type="checkbox" value="${b.id}" style="display:none;"> <span>${b.name}</span>`;
+                    pillsContainer.appendChild(lbl);
+                });
+
+                if (hasRooms) {
+                    additionalRoomsContainer.appendChild(groupHeader);
+                    additionalRoomsContainer.appendChild(pillsContainer);
+                }
+            });
         }
         
         const nightsSelect = document.getElementById('numNights');
@@ -497,32 +691,126 @@ document.addEventListener('DOMContentLoaded', () => {
         const nightsSelect = document.getElementById('numNights');
         const nights = nightsSelect ? parseInt(nightsSelect.value) || 1 : 1;
         
+        const bookingSourceInput = document.getElementById('bookingSource');
+        const bookingSourceOtherContainer = document.getElementById('bookingSourceOtherContainer');
+        const bookingSourceOtherInput = document.getElementById('bookingSourceOther');
+        const extraBedInput = document.getElementById('extraBed');
+        const extraBedChargeInput = document.getElementById('extraBedCharge');
+        
+        let bookingSource = 'Walk-in';
+        if (bookingSourceOtherContainer && bookingSourceOtherContainer.style.display === 'block') {
+            bookingSource = bookingSourceOtherInput ? bookingSourceOtherInput.value.trim() || 'Other' : 'Other';
+        } else {
+            bookingSource = bookingSourceInput ? bookingSourceInput.value : 'Walk-in';
+        }
+        
+        const extraBed = extraBedInput ? extraBedInput.checked : false;
+        const extraBedCharge = (extraBed && extraBedChargeInput) ? extraBedChargeInput.value : '';
+
+        const additionalRoomsContainer = document.getElementById('additionalRoomsContainer');
+        const selectedAdditionalRooms = [];
+        if (additionalRoomsContainer) {
+            const checkboxes = additionalRoomsContainer.querySelectorAll('input[type="checkbox"]:checked');
+            checkboxes.forEach(cb => selectedAdditionalRooms.push(cb.value));
+        }
+
+        const roomsToBook = [activeRoomId, ...selectedAdditionalRooms];
+
         const baseDateObj = new Date(activeDateIso);
 
         // Validation: Prevent Overbooking
-        for(let i=0; i<nights; i++) {
-            const d = new Date(baseDateObj);
-            d.setDate(d.getDate() + i);
-            const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); const iso = `${y}-${m}-${day}`;
-            const key = `${activeRoomId}_${iso}`;
-            
-            // Check if checking future dates and it is already booked
-            if (i > 0 && bookings[key]) {
-                alert(`Cannot book ${nights} nights! Room is already booked on ${iso} by ${bookings[key].guestName}.`);
-                return; 
+        for (const roomId of roomsToBook) {
+            for(let i=0; i<nights; i++) {
+                const d = new Date(baseDateObj);
+                d.setDate(d.getDate() + i);
+                const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); const iso = `${y}-${m}-${day}`;
+                const key = `${roomId}_${iso}`;
+                
+                if ((i > 0 || roomId !== activeRoomId) && bookings[key]) {
+                    alert(`Cannot book! Room ${roomId} is already booked on ${iso} by ${bookings[key].guestName}.`);
+                    return; 
+                }
             }
         }
 
-        for(let i=0; i<nights; i++) {
-            const d = new Date(baseDateObj);
-            d.setDate(d.getDate() + i);
-            const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); const iso = `${y}-${m}-${day}`;
-            const key = `${activeRoomId}_${iso}`;
-            bookings[key] = { guestName: name, status: status };
+        for (const roomId of roomsToBook) {
+            for(let i=0; i<nights; i++) {
+                const d = new Date(baseDateObj);
+                d.setDate(d.getDate() + i);
+                const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); const iso = `${y}-${m}-${day}`;
+                const key = `${roomId}_${iso}`;
+                bookings[key] = { 
+                    guestName: name, 
+                    status: status,
+                    bookingSource: bookingSource,
+                    extraBed: extraBed,
+                    extraBedCharge: extraBedCharge
+                };
+            }
         }
         
         saveAndRender();
         closeModal();
+    }
+
+    const extraBedInput = document.getElementById('extraBed');
+    const extraBedChargeContainer = document.getElementById('extraBedChargeContainer');
+    const extraBedChargeInput = document.getElementById('extraBedCharge');
+    if (extraBedInput && extraBedChargeContainer) {
+        extraBedInput.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                extraBedChargeContainer.style.display = 'block';
+            } else {
+                extraBedChargeContainer.style.display = 'none';
+                if (extraBedChargeInput) extraBedChargeInput.value = '';
+            }
+        });
+    }
+
+    const showGroupBooking = document.getElementById('showGroupBooking');
+    const groupBookingContainer = document.getElementById('groupBookingContainer');
+    if (showGroupBooking && groupBookingContainer) {
+        showGroupBooking.addEventListener('change', (e) => {
+            groupBookingContainer.style.display = e.target.checked ? 'block' : 'none';
+        });
+    }
+
+    const bookingSourceInputGlobal = document.getElementById('bookingSource');
+    const bookingSourceOtherContainerGlobal = document.getElementById('bookingSourceOtherContainer');
+    const bookingSourceOtherInputGlobal = document.getElementById('bookingSourceOther');
+    const resetSourceBtn = document.getElementById('resetSourceBtn');
+    
+    if (bookingSourceInputGlobal && bookingSourceOtherContainerGlobal && bookingSourceOtherInputGlobal) {
+        bookingSourceInputGlobal.addEventListener('change', (e) => {
+            if (e.target.value === 'Other') {
+                bookingSourceInputGlobal.style.display = 'none';
+                bookingSourceOtherContainerGlobal.style.display = 'block';
+                bookingSourceOtherInputGlobal.focus();
+            }
+        });
+    }
+    
+    if (resetSourceBtn) {
+        resetSourceBtn.addEventListener('click', () => {
+            if (bookingSourceOtherContainerGlobal && bookingSourceInputGlobal && bookingSourceOtherInputGlobal) {
+                bookingSourceOtherContainerGlobal.style.display = 'none';
+                bookingSourceOtherInputGlobal.value = '';
+                bookingSourceInputGlobal.style.display = 'block';
+                bookingSourceInputGlobal.value = 'Walk-in';
+            }
+        });
+    }
+
+    const btnDeleteGlobal = document.getElementById('btnDelete');
+    if (btnDeleteGlobal) {
+        btnDeleteGlobal.addEventListener('click', () => {
+            if (confirm('Are you sure you want to delete this booking?')) {
+                const key = `${activeRoomId}_${activeDateIso}`;
+                delete bookings[key];
+                saveAndRender();
+                closeModal();
+            }
+        });
     }
 
     btnBooked.addEventListener('click', () => setBooking('booked'));

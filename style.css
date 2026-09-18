@@ -42,6 +42,15 @@ body {
     padding: 0;
     overflow: hidden;
     letter-spacing: -0.01em;
+    user-select: none;
+    -webkit-user-select: none;
+    caret-color: transparent;
+}
+
+input, textarea, [contenteditable] {
+    user-select: auto;
+    -webkit-user-select: auto;
+    caret-color: auto;
 }
 
 .app-container {

@@ -29,6 +29,12 @@
     font-family: 'Outfit', sans-serif;
 }
 
+button {
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
 body {
     background: var(--bg-dark);
     color: var(--text-light);

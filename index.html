@@ -104,46 +104,16 @@
                         <option value="Private">Private Bath</option>
                     </select>
                     <input type="text" id="guestSearch" class="input-minimal" placeholder="Search guest...">
-                    <input type="file" id="fileImport" accept=".xlsx,.xlsb,.xls" style="display: none;">
+
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                         <button id="btnToggleView" class="btn-minimal"
                             style="border: none; border-radius: 4px; background: rgba(255,255,255,0.1); color: var(--text-light); padding: 0.5rem 1rem;"
                             title="Switch View">
                             📊 Dashboard
                         </button>
-                        <button id="btnFileMenu" class="btn-minimal"
-                            style="border: none; border-radius: 4px; background: rgba(255,255,255,0.1); color: var(--text-light); padding: 0.5rem 1rem;"
-                            title="File Menu">
-                            📁 File
-                        </button>
+
                     </div>
-                    <!-- File Modal (glassmorphism) -->
-                    <div class="modal-overlay" id="fileModal"
-                        style="background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);">
-                        <div class="modal"
-                            style="max-width: 340px; background: rgba(10,10,10,0.85); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1.5rem;">
-                            <div class="modal-header" style="display: flex; justify-content: flex-end;">
-                                <button class="close-btn" id="closeFileModal">&times;</button>
-                            </div>
-                            <div class="modal-body" style="display: flex; flex-direction: column; gap: 0.75rem;">
-                                <button id="btnNewFile" class="btn-minimal"
-                                    style="width: 100%; background: transparent; border: 1px solid var(--glass-border); color: var(--text-light);"
-                                    title="Create New .XLSX">
-                                    ✚ New File
-                                </button>
-                                <button id="btnImport" class="btn-minimal"
-                                    style="width: 100%; background: transparent; border: 1px solid var(--glass-border); color: var(--text-light);"
-                                    title="Import .XLSX">
-                                    ⬆️ Import File
-                                </button>
-                                <button id="btnExport" class="btn-minimal"
-                                    style="width: 100%; background: var(--color-booked-bg); color: var(--color-booked); border: 1px solid var(--color-booked);"
-                                    title="Save .XLSX">
-                                    💾 Export
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+
                     <button id="btnCalc" class="btn-minimal" style="display: flex; align-items: center; gap: 0.4rem;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -444,7 +414,6 @@
 
 
     <!-- SheetJS for XLSB Export -->
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
     <!-- Firebase Compat SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>

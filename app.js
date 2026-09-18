@@ -86,6 +86,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         updateDashboardStats();
                         renderAdminRooms();
                         scrollToToday();
+                    }, (error) => {
+                        console.error("Firestore error:", error);
+                        renderTable();
+                        updateDashboardStats();
+                        renderAdminRooms();
+                        scrollToToday();
                     });
                 } else {
                     renderTable();

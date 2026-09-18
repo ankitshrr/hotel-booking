@@ -742,3 +742,19 @@ input[type=number] {
 #ctxCheckIn:hover { color: var(--color-checkin); }
 #ctxCheckOut:hover { color: var(--color-checkout); }
 #ctxClear:hover { color: #ef4444; }
+
+/* Login Modal Overlay */
+.login-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+.login-overlay.active {
+    display: flex;
+}
+

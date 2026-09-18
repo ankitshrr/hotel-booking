@@ -12,10 +12,36 @@
 </head>
 
 <body>
+    <!-- Login Modal Overlay (blocks everything until logged in) -->
+    <div class="login-overlay active" id="loginOverlay">
+        <div class="modal login-modal" style="max-width: 400px; padding: 2rem;">
+            <h2 style="font-size: 1.5rem; margin-bottom: 0.25rem; text-align: center;">Room Manager Pro</h2>
+            <p class="modal-subtitle" style="text-align: center; margin-bottom: 1.5rem;">Please log in to continue</p>
+            
+            <div class="form-group" style="margin-top: 1rem;">
+                <input type="email" id="loginEmail" placeholder="Email Address" class="input-minimal" style="width: 100%; margin-bottom: 0.75rem; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); padding: 0.85rem; border-radius: 8px; color: #fff;">
+                <input type="password" id="loginPassword" placeholder="Password" class="input-minimal" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); padding: 0.85rem; border-radius: 8px; color: #fff;">
+            </div>
+            
+            <div class="action-buttons" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                <button class="btn btn-booked" id="btnLoginEmail" style="width: 100%; font-weight: 700;">Login / Register</button>
+                <div style="text-align: center; font-size: 0.85rem; color: var(--text-muted); margin: 0.25rem 0;">— OR —</div>
+                <button class="btn btn-available" id="btnLoginGoogle" style="width: 100%; border-color: #fff; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1.8-9.4v3.6c-1.9-1.2-3.1-3.3-3.1-5.6 0-3.6 2.8-6.6 6.3-6.6 1.8 0 3.5.7 4.7 1.9l-2.4 2.4c-.6-.5-1.4-.8-2.3-.8-2.1 0-3.8 1.7-3.8 3.8 0 1.2.6 2.3 1.5 3.1z"></path>
+                    </svg>
+                    Sign in with Google
+                </button>
+            </div>
+            
+            <p id="loginError" style="color: #ef4444; font-size: 0.85rem; margin-top: 1rem; text-align: center; display: none;"></p>
+        </div>
+    </div>
     <div class="app-container">
         <header class="app-header">
-            <div class="header-left">
+            <div class="header-left" style="display: flex; gap: 1rem; align-items: center;">
                 <h1>ROOM.MANAGER <span class="badge">PRO</span></h1>
+                <button id="btnLogout" class="btn-minimal" style="display: none; font-size: 0.8rem; padding: 0.25rem 0.5rem; border: 1px solid var(--glass-border); border-radius: 4px; color: var(--text-light); cursor: pointer;">Logout</button>
             </div>
 
             <div class="header-center">
@@ -314,6 +340,10 @@
 
     <!-- SheetJS for XLSB Export -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+    <!-- Firebase Compat SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
     <script src="app.js?v=7"></script>
 </body>

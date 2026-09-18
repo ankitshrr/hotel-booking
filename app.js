@@ -26,7 +26,88 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const searchInput = document.getElementById('guestSearch');
 
-    // Firebase and Login removed for local-only, Excel-based storage
+    // Firebase Configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyCRnEgvdzDFO7Q5EZxgWcxCpwz_GKIrI_o",
+        authDomain: "hotel-booking0007.firebaseapp.com",
+        projectId: "hotel-booking0007",
+        storageBucket: "hotel-booking0007.firebasestorage.app",
+        messagingSenderId: "789897623083",
+        appId: "1:789897623083:web:bb87ecfefe9eb7ea3e1c6e",
+        measurementId: "G-C6W9B0Z850"
+    };
+
+    let auth = null;
+    if (typeof firebase !== 'undefined') {
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        auth = firebase.auth();
+    }
+
+    const loginOverlay = document.getElementById('loginOverlay');
+    const loginEmailInput = document.getElementById('loginEmail');
+    const loginPasswordInput = document.getElementById('loginPassword');
+    const btnLoginEmail = document.getElementById('btnLoginEmail');
+    const btnLoginGoogle = document.getElementById('btnLoginGoogle');
+    const btnLogout = document.getElementById('btnLogout');
+    const loginError = document.getElementById('loginError');
+
+    if (auth) {
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                if(loginOverlay) loginOverlay.classList.remove('active');
+                if(btnLogout) btnLogout.style.display = 'block';
+                renderTable();
+                scrollToToday();
+            } else {
+                if(loginOverlay) loginOverlay.classList.add('active');
+                if(btnLogout) btnLogout.style.display = 'none';
+                if(roomRows) roomRows.innerHTML = ''; 
+            }
+        });
+
+        if (btnLoginEmail) {
+            btnLoginEmail.addEventListener('click', () => {
+                const email = loginEmailInput.value;
+                const password = loginPasswordInput.value;
+                if (!email || !password) {
+                    loginError.textContent = "Please enter email and password.";
+                    loginError.style.display = "block";
+                    return;
+                }
+                auth.signInWithEmailAndPassword(email, password)
+                    .catch(error => {
+                        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-login-credentials') {
+                            auth.createUserWithEmailAndPassword(email, password)
+                                .catch(err => {
+                                    loginError.textContent = err.message;
+                                    loginError.style.display = "block";
+                                });
+                        } else {
+                            loginError.textContent = error.message;
+                            loginError.style.display = "block";
+                        }
+                    });
+            });
+        }
+
+        if (btnLoginGoogle) {
+            btnLoginGoogle.addEventListener('click', () => {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                auth.signInWithPopup(provider).catch(error => {
+                    loginError.textContent = error.message;
+                    loginError.style.display = "block";
+                });
+            });
+        }
+
+        if (btnLogout) {
+            btnLogout.addEventListener('click', () => {
+                auth.signOut();
+            });
+        }
+    }
 
     // Rooms Configuration
     const roomsConfig = [
@@ -1348,6 +1429,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const roomFilterInit = document.getElementById('roomFilter');
     if (roomFilterInit) roomFilterInit.addEventListener('change', renderTable);
 
-    renderTable();
-    scrollToToday();
+    if (!auth) {
+        renderTable();
+        scrollToToday();
+    }
 });

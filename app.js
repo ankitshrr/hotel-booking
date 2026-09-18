@@ -170,11 +170,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         })
                         .catch(error => {
                             if (error.code === 'auth/email-already-in-use') {
-                                loginError.textContent = "Account already exists! Please log in instead.";
+                                // Account exists, so just log them in!
+                                auth.signInWithEmailAndPassword(email, password)
+                                    .then(() => {
+                                        showToast("Login Successful!", "success");
+                                    })
+                                    .catch(loginErr => {
+                                        loginError.textContent = "Account exists, but incorrect password.";
+                                        loginError.style.display = "block";
+                                    });
                             } else {
                                 loginError.textContent = error.message;
+                                loginError.style.display = "block";
                             }
-                            loginError.style.display = "block";
                         });
                 }
             });

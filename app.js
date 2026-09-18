@@ -5,22 +5,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModalBtn = document.getElementById('closeModal');
     const guestNameInput = document.getElementById('guestName');
     const modalSubtitle = document.getElementById('modalSubtitle');
-    
+
     const btnBooked = document.getElementById('btnBooked');
     const btnCheckIn = document.getElementById('btnCheckIn');
     const btnCheckOut = document.getElementById('btnCheckOut');
     const btnClosed = document.getElementById('btnClosed');
     const btnClear = document.getElementById('btnClear');
-    
+
     const btnToday = document.getElementById('btnToday');
     const jumpMonthInput = document.getElementById('jumpMonth');
     const currentMonthTitle = document.getElementById('currentMonthTitle');
-    
+
     // Default to the 1st of the current month, viewing the whole month
     const todayForInit = new Date();
-    todayForInit.setHours(0,0,0,0);
+    todayForInit.setHours(0, 0, 0, 0);
     const firstDayOfMonth = new Date(todayForInit.getFullYear(), todayForInit.getMonth(), 1);
-    
+
     let startDateOffset = Math.round((firstDayOfMonth - todayForInit) / (1000 * 60 * 60 * 24));
     let daysToView = new Date(todayForInit.getFullYear(), todayForInit.getMonth() + 1, 0).getDate();
 
@@ -61,9 +61,9 @@ document.addEventListener('DOMContentLoaded', () => {
         auth.onAuthStateChanged(user => {
             if (user) {
                 currentUserUid = user.uid;
-                if(loginOverlay) loginOverlay.classList.remove('active');
-                if(btnLogout) btnLogout.style.display = 'block';
-                
+                if (loginOverlay) loginOverlay.classList.remove('active');
+                if (btnLogout) btnLogout.style.display = 'block';
+
                 if (db) {
                     db.collection('userBookings').doc(currentUserUid).onSnapshot((doc) => {
                         if (doc.exists) {
@@ -80,6 +80,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             roomsConfig = JSON.parse(JSON.stringify(defaultRoomsConfig));
                         }
                         renderTable();
+                        updateDashboardStats();
+                        renderAdminRooms();
                         scrollToToday();
                     });
                 } else {
@@ -88,9 +90,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else {
                 currentUserUid = null;
-                if(loginOverlay) loginOverlay.classList.add('active');
-                if(btnLogout) btnLogout.style.display = 'none';
-                if(roomRows) roomRows.innerHTML = ''; 
+                if (loginOverlay) loginOverlay.classList.add('active');
+                if (btnLogout) btnLogout.style.display = 'none';
+                if (roomRows) roomRows.innerHTML = '';
             }
         });
 
@@ -105,7 +107,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 auth.signInWithEmailAndPassword(email, password)
                     .catch(error => {
-                        loginError.textContent = error.message;
+                        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-login-credentials') {
+                            loginError.textContent = "Account not found or incorrect password. Try clicking Register.";
+                        } else {
+                            loginError.textContent = error.message;
+                        }
                         loginError.style.display = "block";
                     });
             });
@@ -122,7 +128,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 auth.createUserWithEmailAndPassword(email, password)
                     .catch(error => {
-                        loginError.textContent = error.message;
+                        if (error.code === 'auth/email-already-in-use') {
+                            loginError.textContent = "Account already exists! Please click 'Login' instead.";
+                        } else {
+                            loginError.textContent = error.message;
+                        }
                         loginError.style.display = "block";
                     });
             });
@@ -130,10 +140,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (btnLoginGoogle) {
             btnLoginGoogle.addEventListener('click', () => {
+                btnLoginGoogle.innerHTML = 'Redirecting to Google...';
                 const provider = new firebase.auth.GoogleAuthProvider();
-                auth.signInWithPopup(provider).catch(error => {
+                auth.signInWithRedirect(provider).catch(error => {
                     loginError.textContent = error.message;
                     loginError.style.display = "block";
+                    btnLoginGoogle.innerHTML = 'Sign in with Google';
                 });
             });
         }
@@ -145,364 +157,402 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Rooms Configuration
+// Rooms Configuration
     const defaultRoomsConfig = [
 
-        {
-            groupName: 'Room 204',
-            groupDesc: 'Four Bed (Fan)',
-            beds: [
-                { id: '204_b1', name: '204 B1' },
-                { id: '204_b2', name: '204 B2' },
-                { id: '204_b3', name: '204 B3' },
-                { id: '204_b4', name: '204 B4' }
-            ]
-        },
+    {
+        groupName: 'Room 204',
+        groupDesc: 'Four Bed (Fan)',
+        beds: [
+            { id: '204_b1', name: '204 B1' },
+            { id: '204_b2', name: '204 B2' },
+            { id: '204_b3', name: '204 B3' },
+            { id: '204_b4', name: '204 B4' }
+        ]
+    },
 
-        {
-            groupName: 'Room 304',
-            groupDesc: 'Four Bed (AC)',
-            beds: [
-                { id: '304_b1', name: '304 B1' },
-                { id: '304_b2', name: '304 B2' },
-                { id: '304_b3', name: '304 B3' },
-                { id: '304_b4', name: '304 B4' }
-            ]
-        },
-        {
-            groupName: 'Room 403',
-            groupDesc: 'Six Bed (AC)',
-            beds: [
-                { id: '403_b1', name: '403 B1' },
-                { id: '403_b2', name: '403 B2' },
-                { id: '403_b3', name: '403 B3' },
-                { id: '403_b4', name: '403 B4' },
-                { id: '403_b5', name: '403 B5' },
-                { id: '403_b6', name: '403 B6' }
-            ]
-        },
-        {
-            groupName: 'Room 302',
-            groupDesc: 'Double Room with Shared Bathroom',
-            beds: [
-                { id: '302', name: '302' }
-            ]
-        },
-        {
-            groupName: 'Standard Double',
-            groupDesc: 'Standard Double Room',
-            beds: [
-                { id: '102', name: '102' },
-                { id: '103', name: '103' },
-                { id: '203', name: '203' }
-            ]
-        },
-        {
-            groupName: 'Deluxe Double',
-            groupDesc: 'Deluxe Double Room',
-            beds: [
-                { id: '201', name: '201' },
-                { id: '301', name: '301' },
-                { id: '401', name: '401' }
-            ]
-        },
-        {
-            groupName: 'Family Private',
-            groupDesc: 'Family Room with Private Bathroom',
-            beds: [
-                { id: '101', name: '101' }
-            ]
-        },
-        {
-            groupName: 'Twin Shared',
-            groupDesc: 'Twin Room with Shared Bathroom',
-            beds: [
-                { id: '202', name: '202' },
-                { id: '303', name: '303' }
-            ]
-        },
-        {
-            groupName: 'Family Shared',
-            groupDesc: 'Family Room with Shared Bathroom',
-            beds: [
-                { id: '402', name: '402' }
-            ]
-        }
-    ];
+    {
+        groupName: 'Room 304',
+        groupDesc: 'Four Bed (AC)',
+        beds: [
+            { id: '304_b1', name: '304 B1' },
+            { id: '304_b2', name: '304 B2' },
+            { id: '304_b3', name: '304 B3' },
+            { id: '304_b4', name: '304 B4' }
+        ]
+    },
+    {
+        groupName: 'Room 403',
+        groupDesc: 'Six Bed (AC)',
+        beds: [
+            { id: '403_b1', name: '403 B1' },
+            { id: '403_b2', name: '403 B2' },
+            { id: '403_b3', name: '403 B3' },
+            { id: '403_b4', name: '403 B4' },
+            { id: '403_b5', name: '403 B5' },
+            { id: '403_b6', name: '403 B6' }
+        ]
+    },
+    {
+        groupName: 'Room 302',
+        groupDesc: 'Double Room with Shared Bathroom',
+        beds: [
+            { id: '302', name: '302' }
+        ]
+    },
+    {
+        groupName: 'Standard Double',
+        groupDesc: 'Standard Double Room',
+        beds: [
+            { id: '102', name: '102' },
+            { id: '103', name: '103' },
+            { id: '203', name: '203' }
+        ]
+    },
+    {
+        groupName: 'Deluxe Double',
+        groupDesc: 'Deluxe Double Room',
+        beds: [
+            { id: '201', name: '201' },
+            { id: '301', name: '301' },
+            { id: '401', name: '401' }
+        ]
+    },
+    {
+        groupName: 'Family Private',
+        groupDesc: 'Family Room with Private Bathroom',
+        beds: [
+            { id: '101', name: '101' }
+        ]
+    },
+    {
+        groupName: 'Twin Shared',
+        groupDesc: 'Twin Room with Shared Bathroom',
+        beds: [
+            { id: '202', name: '202' },
+            { id: '303', name: '303' }
+        ]
+    },
+    {
+        groupName: 'Family Shared',
+        groupDesc: 'Family Room with Shared Bathroom',
+        beds: [
+            { id: '402', name: '402' }
+        ]
+    }
+];
 
-    let roomsConfig = JSON.parse(localStorage.getItem('pmsRoomsConfig')) || JSON.parse(JSON.stringify(defaultRoomsConfig));
+let roomsConfig = JSON.parse(JSON.stringify(defaultRoomsConfig));
+if (localStorage.getItem('pmsRoomsConfig')) {
+    try {
+        roomsConfig = JSON.parse(localStorage.getItem('pmsRoomsConfig'));
+    } catch(e) {}
+}
 
-    let dates = [];
-    function generateDates() {
-        dates = [];
-        const baseDate = new Date();
-        baseDate.setDate(baseDate.getDate() + startDateOffset);
-        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        if (currentMonthTitle) {
-            currentMonthTitle.textContent = `${monthNames[baseDate.getMonth()]} ${baseDate.getFullYear()}`;
-        }
-        
-        const t = new Date(); const realTodayIso = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
-        for(let i=0; i<daysToView; i++) {
-            let d = new Date(baseDate);
-            d.setDate(d.getDate() + i);
-            const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-            const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); const iso = `${y}-${m}-${day}`;
-            dates.push({ label: dateStr, iso: iso, isToday: iso === realTodayIso });
-        }
+let dates = [];
+function generateDates() {
+    dates = [];
+    const baseDate = new Date();
+    baseDate.setDate(baseDate.getDate() + startDateOffset);
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    if (currentMonthTitle) {
+        currentMonthTitle.textContent = `${monthNames[baseDate.getMonth()]} ${baseDate.getFullYear()}`;
     }
 
-    // Bookings State: key = "roomId_isoDate", value = { guestName, status }
-    let bookings = {};
-    let currentFileHandle = null;
+    const t = new Date(); const realTodayIso = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+    for (let i = 0; i < daysToView; i++) {
+        let d = new Date(baseDate);
+        d.setDate(d.getDate() + i);
+        const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+        const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); const iso = `${y}-${m}-${day}`;
+        dates.push({ label: dateStr, iso: iso, isToday: iso === realTodayIso });
+    }
+}
 
-    // Current selection
-    let activeRoomId = null;
-    let activeDateIso = null;
-    
-    // Drag and Drop State
-    let draggedBlock = null;
+// Bookings State: key = "roomId_isoDate", value = { guestName, status }
+let bookings = {};
+let currentFileHandle = null;
 
-    function renderTable() {
-        generateDates();
-        
-        // Filter rooms based on selection
-        const roomFilter = document.getElementById('roomFilter');
-        let filteredRoomsConfig = roomsConfig;
-        if (roomFilter && roomFilter.value !== 'all') {
-            const fv = roomFilter.value.toLowerCase();
-            filteredRoomsConfig = roomsConfig.filter(g => 
-                g.groupDesc.toLowerCase().includes(fv) || 
-                g.groupName.toLowerCase().includes(fv)
-            );
-        }
+// Current selection
+let activeRoomId = null;
+let activeDateIso = null;
 
-        // Render Headers
-        dateHeaders.innerHTML = '<th class="room-col-header">Rooms / Dates</th>';
-        dates.forEach(d => {
-            const th = document.createElement('th');
-            th.textContent = d.label;
-            if(d.isToday) th.classList.add('today-header');
-            dateHeaders.appendChild(th);
-        });
+// Drag and Drop State
+let draggedBlock = null;
 
-        // Render Rows
-        roomRows.innerHTML = '';
-        filteredRoomsConfig.forEach(group => {
-            
-            // 1. Group Header Row
-            const trGroup = document.createElement('tr');
-            trGroup.className = 'group-row';
-            
-            const tdGroup = document.createElement('td');
-            tdGroup.colSpan = dates.length + 1; // Span across all dates + room column
-            tdGroup.className = 'group-cell';
-            
-            tdGroup.innerHTML = `
+function renderTable() {
+    generateDates();
+
+    // Filter rooms based on selection
+    const roomFilter = document.getElementById('roomFilter');
+    let filteredRoomsConfig = roomsConfig;
+    if (roomFilter && roomFilter.value !== 'all') {
+        const fv = roomFilter.value.toLowerCase();
+        filteredRoomsConfig = roomsConfig.filter(g =>
+            g.groupDesc.toLowerCase().includes(fv) ||
+            g.groupName.toLowerCase().includes(fv)
+        );
+    }
+
+    // Render Headers
+    dateHeaders.innerHTML = '<th class="room-col-header">Rooms / Dates</th>';
+    dates.forEach(d => {
+        const th = document.createElement('th');
+        th.textContent = d.label;
+        if (d.isToday) th.classList.add('today-header');
+        dateHeaders.appendChild(th);
+    });
+
+    // Render Rows
+    roomRows.innerHTML = '';
+    filteredRoomsConfig.forEach(group => {
+
+        // 1. Group Header Row
+        const trGroup = document.createElement('tr');
+        trGroup.className = 'group-row';
+
+        const tdGroup = document.createElement('td');
+        tdGroup.colSpan = dates.length + 1; // Span across all dates + room column
+        tdGroup.className = 'group-cell';
+
+        tdGroup.innerHTML = `
                 <div class="group-title-container sticky-left">
                     <div class="group-title">${group.groupDesc}</div>
                 </div>
             `;
-            trGroup.appendChild(tdGroup);
-            roomRows.appendChild(trGroup);
+        trGroup.appendChild(tdGroup);
+        roomRows.appendChild(trGroup);
 
-            // 2. Bed Rows
-            group.beds.forEach(bed => {
-                const tr = document.createElement('tr');
-                
-                const tdRoom = document.createElement('td');
-                tdRoom.className = 'room-cell sub-room';
-                tdRoom.innerHTML = `<div class="sub-room-name">${bed.name}</div>`;
-                tr.appendChild(tdRoom);
+        // 2. Bed Rows
+        group.beds.forEach(bed => {
+            const tr = document.createElement('tr');
 
-                dates.forEach(d => {
-                    const tdCell = document.createElement('td');
-                    tdCell.className = 'day-cell';
-                    if(d.isToday) tdCell.classList.add('today-cell');
-                    
-                    const cellKey = `${bed.id}_${d.iso}`;
-                    const booking = bookings[cellKey];
-                    
-                    if (booking) {
-                        const extraBedIcon = booking.extraBed ? ' <span style="font-size: 0.85em; opacity: 0.8;" title="Extra Bed">🛏️</span>' : '';
-                        tdCell.innerHTML = `<div class="booking-content status-${booking.status}" draggable="true">${booking.guestName}${extraBedIcon}</div>`;
-                    }
+            const tdRoom = document.createElement('td');
+            tdRoom.className = 'room-cell sub-room';
+            tdRoom.innerHTML = `<div class="sub-room-name">${bed.name}</div>`;
+            tr.appendChild(tdRoom);
 
-                    tdCell.dataset.roomId = bed.id;
-                    tdCell.dataset.dateIso = d.iso;
+            dates.forEach(d => {
+                const tdCell = document.createElement('td');
+                tdCell.className = 'day-cell';
+                if (d.isToday) tdCell.classList.add('today-cell');
 
-                    if (booking) {
-                        const content = tdCell.querySelector('.booking-content');
-                        content.addEventListener('dragstart', (e) => {
-                            const blockDates = [];
-                            let checkDate = new Date(d.iso);
-                            while (true) {
-                                checkDate.setDate(checkDate.getDate() - 1);
-                                const iso = checkDate.toISOString().split('T')[0];
-                                const key = `${bed.id}_${iso}`;
-                                if (bookings[key] && bookings[key].guestName === booking.guestName) {
-                                    blockDates.unshift(iso);
-                                } else {
-                                    break;
-                                }
-                            }
-                            blockDates.push(d.iso);
-                            checkDate = new Date(d.iso);
-                            while (true) {
-                                checkDate.setDate(checkDate.getDate() + 1);
-                                const iso = checkDate.toISOString().split('T')[0];
-                                const key = `${bed.id}_${iso}`;
-                                if (bookings[key] && bookings[key].guestName === booking.guestName) {
-                                    blockDates.push(iso);
-                                } else {
-                                    break;
-                                }
-                            }
+                const cellKey = `${bed.id}_${d.iso}`;
+                const booking = bookings[cellKey];
 
-                            draggedBlock = {
-                                roomId: bed.id,
-                                guestName: booking.guestName,
-                                status: booking.status,
-                                dates: blockDates,
-                                dragAnchorIso: d.iso
-                            };
-
-                            setTimeout(() => content.classList.add('dragging'), 0);
-                            e.dataTransfer.effectAllowed = 'move';
-                            e.dataTransfer.setData('text/plain', booking.guestName);
-                        });
-
-                        content.addEventListener('dragend', () => {
-                            content.classList.remove('dragging');
-                            draggedBlock = null;
-                            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
-                        });
-                    }
-
-                    tdCell.addEventListener('dragover', (e) => {
-                        e.preventDefault();
-                        if (!draggedBlock) return;
-                        e.dataTransfer.dropEffect = 'move';
-                        tdCell.classList.add('drag-over');
-                    });
-
-                    tdCell.addEventListener('dragleave', () => {
-                        tdCell.classList.remove('drag-over');
-                    });
-
-                    tdCell.addEventListener('drop', (e) => {
-                        e.preventDefault();
-                        tdCell.classList.remove('drag-over');
-                        if (!draggedBlock) return;
-
-                        const dropRoomId = tdCell.dataset.roomId;
-                        const dropDateIso = tdCell.dataset.dateIso;
-
-                        if (dropRoomId === draggedBlock.roomId && dropDateIso === draggedBlock.dragAnchorIso) {
-                            return;
-                        }
-
-                        const anchorDate = new Date(draggedBlock.dragAnchorIso);
-                        const dropDate = new Date(dropDateIso);
-                        const dayShift = Math.round((dropDate - anchorDate) / (1000 * 60 * 60 * 24));
-
-                        const newDates = [];
-                        let collision = false;
-                        for (let iso of draggedBlock.dates) {
-                            const oldDate = new Date(iso);
-                            const newDateObj = new Date(oldDate.getTime() + (dayShift * 86400000));
-                            const newIso = newDateObj.toISOString().split('T')[0];
-                            newDates.push(newIso);
-
-                            const targetKey = `${dropRoomId}_${newIso}`;
-                            if (bookings[targetKey]) {
-                                if (!(dropRoomId === draggedBlock.roomId && draggedBlock.dates.includes(newIso))) {
-                                    collision = true;
-                                }
-                            }
-                        }
-
-                        if (collision) {
-                            alert('Cannot move here. The dates overlap with an existing booking!');
-                            return;
-                        }
-
-                        draggedBlock.dates.forEach(iso => {
-                            delete bookings[`${draggedBlock.roomId}_${iso}`];
-                        });
-
-                        newDates.forEach(iso => {
-                            bookings[`${dropRoomId}_${iso}`] = {
-                                guestName: draggedBlock.guestName,
-                                status: draggedBlock.status
-                            };
-                        });
-
-                        draggedBlock = null;
-                        saveAndRender();
-                    });
-
-                    tdCell.addEventListener('click', () => openModal(bed, group, d, booking));
-                    
-                    // Context Menu
-                    tdCell.addEventListener('contextmenu', (e) => {
-                        if (booking) {
-                            showContextMenu(e, bed.id, d.iso);
-                        }
-                    });
-
-                    tr.appendChild(tdCell);
-                });
-
-                roomRows.appendChild(tr);
-            });
-        });
-        updateStats();
-    }
-
-    function updateStats() {
-        const t = new Date(); const realTodayIso = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
-        let totalBeds = 0;
-        let bookedToday = 0;
-        let checkinsToday = 0;
-        
-        roomsConfig.forEach(group => {
-            totalBeds += group.beds.length;
-            group.beds.forEach(bed => {
-                const key = `${bed.id}_${realTodayIso}`;
-                if(bookings[key]) {
-                    bookedToday++;
-                    if(bookings[key].status === 'checkin') checkinsToday++;
+                if (booking) {
+                    const extraBedIcon = booking.extraBed ? ' <span style="font-size: 0.85em; opacity: 0.8;" title="Extra Bed">🛏️</span>' : '';
+                    tdCell.innerHTML = `<div class="booking-content status-${booking.status}" draggable="true">${booking.guestName}${extraBedIcon}</div>`;
                 }
-            });
-        });
-        
-        const occ = totalBeds === 0 ? 0 : Math.round((bookedToday / totalBeds) * 100);
-        const available = totalBeds - bookedToday;
-        
-        const statsContainer = document.getElementById('statsDashboard');
-        if(statsContainer) {
-            statsContainer.innerHTML = `
-                <div class="stat-box"><span>Occupancy</span><strong>${occ}%</strong></div>
-                <div class="stat-box"><span>Check-ins</span><strong>${checkinsToday}</strong></div>
-                <div class="stat-box"><span>Available</span><strong>${available}</strong></div>
-            `;
-        }
-    }
 
-    function scrollToToday() {
-        setTimeout(() => {
-            const wrapper = document.querySelector('.table-wrapper');
-            const todayHeader = document.querySelector('.today-header');
-            if (wrapper && todayHeader) {
-                // 220px accounts for the sticky room column
-                wrapper.scrollTo({
-                    left: todayHeader.offsetLeft - 220,
-                    behavior: 'smooth'
+                tdCell.dataset.roomId = bed.id;
+                tdCell.dataset.dateIso = d.iso;
+
+                if (booking) {
+                    const content = tdCell.querySelector('.booking-content');
+                    content.addEventListener('dragstart', (e) => {
+                        const blockDates = [];
+                        let checkDate = new Date(d.iso);
+                        while (true) {
+                            checkDate.setDate(checkDate.getDate() - 1);
+                            const iso = checkDate.toISOString().split('T')[0];
+                            const key = `${bed.id}_${iso}`;
+                            if (bookings[key] && bookings[key].guestName === booking.guestName) {
+                                blockDates.unshift(iso);
+                            } else {
+                                break;
+                            }
+                        }
+                        blockDates.push(d.iso);
+                        checkDate = new Date(d.iso);
+                        while (true) {
+                            checkDate.setDate(checkDate.getDate() + 1);
+                            const iso = checkDate.toISOString().split('T')[0];
+                            const key = `${bed.id}_${iso}`;
+                            if (bookings[key] && bookings[key].guestName === booking.guestName) {
+                                blockDates.push(iso);
+                            } else {
+                                break;
+                            }
+                        }
+
+                        draggedBlock = {
+                            roomId: bed.id,
+                            guestName: booking.guestName,
+                            status: booking.status,
+                            dates: blockDates,
+                            dragAnchorIso: d.iso
+                        };
+
+                        setTimeout(() => content.classList.add('dragging'), 0);
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', booking.guestName);
+                    });
+
+                    content.addEventListener('dragend', () => {
+                        content.classList.remove('dragging');
+                        draggedBlock = null;
+                        document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+                    });
+                }
+
+                tdCell.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (!draggedBlock) return;
+                    e.dataTransfer.dropEffect = 'move';
+                    tdCell.classList.add('drag-over');
                 });
+
+                tdCell.addEventListener('dragleave', () => {
+                    tdCell.classList.remove('drag-over');
+                });
+
+                tdCell.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    tdCell.classList.remove('drag-over');
+                    if (!draggedBlock) return;
+
+                    const dropRoomId = tdCell.dataset.roomId;
+                    const dropDateIso = tdCell.dataset.dateIso;
+
+                    if (dropRoomId === draggedBlock.roomId && dropDateIso === draggedBlock.dragAnchorIso) {
+                        return;
+                    }
+
+                    const anchorDate = new Date(draggedBlock.dragAnchorIso);
+                    const dropDate = new Date(dropDateIso);
+                    const dayShift = Math.round((dropDate - anchorDate) / (1000 * 60 * 60 * 24));
+
+                    const newDates = [];
+                    let collision = false;
+                    for (let iso of draggedBlock.dates) {
+                        const oldDate = new Date(iso);
+                        const newDateObj = new Date(oldDate.getTime() + (dayShift * 86400000));
+                        const newIso = newDateObj.toISOString().split('T')[0];
+                        newDates.push(newIso);
+
+                        const targetKey = `${dropRoomId}_${newIso}`;
+                        if (bookings[targetKey]) {
+                            if (!(dropRoomId === draggedBlock.roomId && draggedBlock.dates.includes(newIso))) {
+                                collision = true;
+                            }
+                        }
+                    }
+
+                    if (collision) {
+                        alert('Cannot move here. The dates overlap with an existing booking!');
+                        return;
+                    }
+
+                    draggedBlock.dates.forEach(iso => {
+                        delete bookings[`${draggedBlock.roomId}_${iso}`];
+                    });
+
+                    newDates.forEach(iso => {
+                        bookings[`${dropRoomId}_${iso}`] = {
+                            guestName: draggedBlock.guestName,
+                            status: draggedBlock.status
+                        };
+                    });
+
+                    draggedBlock = null;
+                    saveAndRender();
+                });
+
+                tdCell.addEventListener('click', () => openModal(bed, group, d, booking));
+
+                // Context Menu
+                tdCell.addEventListener('contextmenu', (e) => {
+                    if (booking) {
+                        showContextMenu(e, bed.id, d.iso);
+                    }
+                });
+
+                tr.appendChild(tdCell);
+            });
+
+            roomRows.appendChild(tr);
+        });
+    });
+    updateStats();
+}
+
+function updateStats() {
+    const t = new Date(); const realTodayIso = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+    let totalBeds = 0;
+    let bookedToday = 0;
+    let checkinsToday = 0;
+
+    roomsConfig.forEach(group => {
+        totalBeds += group.beds.length;
+        group.beds.forEach(bed => {
+            const key = `${bed.id}_${realTodayIso}`;
+            if (bookings[key]) {
+                bookedToday++;
+                if (bookings[key].status === 'checkin') checkinsToday++;
             }
-        }, 100);
+        });
+    });
+
+    const occ = totalBeds === 0 ? 0 : Math.round((bookedToday / totalBeds) * 100);
+    const available = totalBeds - bookedToday;
+    const statsContainer = document.getElementById('statsDashboard');
+    if (statsContainer) {
+        statsContainer.innerHTML = `
+            <div class="stat-box"><span>Occupancy</span><strong>${occ}%</strong></div>
+            <div class="stat-box"><span>Check-ins</span><strong>${checkinsToday}</strong></div>
+            <div class="stat-box"><span>Available</span><strong>${available}</strong></div>
+        `;
     }
+    
+    updateDashboardStats();
+}
+
+function updateDashboardStats() {
+    const dashTotalRooms = document.getElementById('dashTotalRooms');
+    const dashOccupied = document.getElementById('dashOccupied');
+    const dashCheckins = document.getElementById('dashCheckins');
+    const dashAvailable = document.getElementById('dashAvailable');
+    
+    if (!dashTotalRooms) return;
+
+    const t = new Date(); const realTodayIso = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+    let totalBeds = 0;
+    let bookedToday = 0;
+    let checkinsToday = 0;
+
+    roomsConfig.forEach(group => {
+        totalBeds += group.beds.length;
+        group.beds.forEach(bed => {
+            const key = `${bed.id}_${realTodayIso}`;
+            if (bookings[key]) {
+                bookedToday++;
+                if (bookings[key].status === 'checkin') checkinsToday++;
+            }
+        });
+    });
+
+    const available = totalBeds - bookedToday;
+
+    dashTotalRooms.textContent = totalBeds;
+    dashOccupied.textContent = bookedToday;
+    dashCheckins.textContent = checkinsToday;
+    dashAvailable.textContent = available;
+}
+
+function scrollToToday() {
+    setTimeout(() => {
+        const wrapper = document.querySelector('.table-wrapper');
+        const todayHeader = document.querySelector('.today-header');
+        if (wrapper && todayHeader) {
+            // 220px accounts for the sticky room column
+            wrapper.scrollTo({
+                left: todayHeader.offsetLeft - 220,
+                behavior: 'smooth'
+            });
+        }
+    }, 100);
+}
 
     function saveAndRender() {
         if (db && currentUserUid) {
@@ -514,776 +564,828 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('pmsBookings', JSON.stringify(bookings));
             localStorage.setItem('pmsRoomsConfig', JSON.stringify(roomsConfig));
         }
-        if (!db) renderTable();
-        if (currentFileHandle) autoSaveToExcel();
+        if (!db) {
+            renderTable();
+            updateDashboardStats();
+            renderAdminRooms();
+        }
+    if (currentFileHandle) autoSaveToExcel();
+}
+
+function generateMatrixExcelData() {
+    const data = [];
+
+    // Add two blank rows at the top to match original file perfectly
+    data.push([]);
+    data.push([]);
+
+    const dateSet = new Set();
+    for (const key of Object.keys(bookings)) {
+        const lastUnderscore = key.lastIndexOf('_');
+        const date = key.substring(lastUnderscore + 1);
+        if (date) dateSet.add(date);
+    }
+    let sortedDates = Array.from(dateSet).sort();
+    if (sortedDates.length === 0) {
+        sortedDates = dates.map(d => d.iso);
+        if (sortedDates.length === 0) {
+            const t = new Date();
+            sortedDates = [`${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`];
+        }
     }
 
-    function generateMatrixExcelData() {
-        const data = [];
-        
-        // Add two blank rows at the top to match original file perfectly
-        data.push([]);
-        data.push([]);
-        
-        const dateSet = new Set();
+    const headerRow = ["Rooms / Dates"];
+    const monthNamesShort = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+    const formattedDates = sortedDates.map(isoDate => {
+        const [y, m, d] = isoDate.split('-');
+        const dateObj = new Date(y, parseInt(m) - 1, d);
+        const day = dateObj.getDate();
+        let suffix = 'th';
+        if (day % 10 === 1 && day !== 11) suffix = 'st';
+        else if (day % 10 === 2 && day !== 12) suffix = 'nd';
+        else if (day % 10 === 3 && day !== 13) suffix = 'rd';
+        return `${day}${suffix} ${monthNamesShort[dateObj.getMonth()]}`;
+    });
+    headerRow.push(...formattedDates);
+    data.push(headerRow);
+
+    roomsConfig.forEach(room => {
+        // Group Header Row (e.g. "Four Bed (Fan)")
+        const groupLabel = room.groupDesc || room.groupName || '';
+        const groupRow = [groupLabel];
+        // fill the rest of the row with empty strings for proper spacing
+        for (let i = 0; i < sortedDates.length; i++) groupRow.push('');
+        data.push(groupRow);
+
+        room.beds.forEach(bed => {
+            const row = [bed.name]; // Matches original "204 B1" format
+            sortedDates.forEach(isoDate => {
+                const cellKey = `${bed.id}_${isoDate}`;
+                const booking = bookings[cellKey];
+                if (booking && booking.guestName && booking.guestName !== 'booked' && !booking.guestName.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    row.push(booking.guestName);
+                } else if (booking) {
+                    row.push(booking.status);
+                } else {
+                    row.push("");
+                }
+            });
+            data.push(row);
+        });
+    });
+
+    return data;
+}
+
+async function autoSaveToExcel() {
+    if (!currentFileHandle) return;
+    try {
+        let allDates = [new Date().toISOString().split('T')[0]];
         for (const key of Object.keys(bookings)) {
-            const lastUnderscore = key.lastIndexOf('_');
-            const date = key.substring(lastUnderscore + 1);
-            if(date) dateSet.add(date);
+            allDates.push(key.split('_').pop());
         }
-        let sortedDates = Array.from(dateSet).sort();
-        if (sortedDates.length === 0) {
-            sortedDates = dates.map(d => d.iso);
-            if (sortedDates.length === 0) {
-                const t = new Date();
-                sortedDates = [`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`];
-            }
+        allDates.sort();
+        const minDate = new Date(allDates[0]);
+        const maxDate = new Date(allDates[allDates.length - 1]);
+        if ((maxDate - minDate) < 30 * 86400000) maxDate.setDate(minDate.getDate() + 30);
+
+        const dateColumns = [];
+        let curr = new Date(minDate);
+        while (curr <= maxDate) {
+            dateColumns.push(curr.toISOString().split('T')[0]);
+            curr.setDate(curr.getDate() + 1);
         }
 
-        const headerRow = ["Rooms / Dates"];
-        const monthNamesShort = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-        const formattedDates = sortedDates.map(isoDate => {
-            const [y, m, d] = isoDate.split('-');
-            const dateObj = new Date(y, parseInt(m)-1, d);
-            const day = dateObj.getDate();
-            let suffix = 'th';
-            if (day % 10 === 1 && day !== 11) suffix = 'st';
-            else if (day % 10 === 2 && day !== 12) suffix = 'nd';
-            else if (day % 10 === 3 && day !== 13) suffix = 'rd';
-            return `${day}${suffix} ${monthNamesShort[dateObj.getMonth()]}`;
-        });
-        headerRow.push(...formattedDates);
-        data.push(headerRow);
-        
-        roomsConfig.forEach(room => {
-            // Group Header Row (e.g. "Four Bed (Fan)")
-            const groupLabel = room.groupDesc || room.groupName || '';
-            const groupRow = [groupLabel];
-            // fill the rest of the row with empty strings for proper spacing
-            for(let i = 0; i < sortedDates.length; i++) groupRow.push('');
-            data.push(groupRow);
-            
-            room.beds.forEach(bed => {
-                const row = [bed.name]; // Matches original "204 B1" format
-                sortedDates.forEach(isoDate => {
-                    const cellKey = `${bed.id}_${isoDate}`;
-                    const booking = bookings[cellKey];
-                    if (booking && booking.guestName && booking.guestName !== 'booked' && !booking.guestName.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                        row.push(booking.guestName);
-                    } else if (booking) {
-                        row.push(booking.status);
-                    } else {
-                        row.push("");
-                    }
+        const data = [];
+        data.push(["Rooms / Dates", ...dateColumns]);
+
+        roomsConfig.forEach(group => {
+            group.beds.forEach(bed => {
+                const row = [bed.id];
+                dateColumns.forEach(date => {
+                    const key = `${bed.id}_${date}`;
+                    row.push(bookings[key] ? bookings[key].guestName : "");
                 });
                 data.push(row);
             });
         });
-        
-        return data;
+
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Bookings");
+
+        const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+
+        const writable = await currentFileHandle.createWritable();
+        await writable.write(excelBuffer);
+        await writable.close();
+        console.log("Auto-saved to matrix format in", currentFileHandle.name);
+    } catch (err) {
+        console.error("Auto-save failed:", err);
     }
-
-    async function autoSaveToExcel() {
-        if (!currentFileHandle) return;
-        try {
-            let allDates = [new Date().toISOString().split('T')[0]];
-            for (const key of Object.keys(bookings)) {
-                allDates.push(key.split('_').pop());
-            }
-            allDates.sort();
-            const minDate = new Date(allDates[0]);
-            const maxDate = new Date(allDates[allDates.length - 1]);
-            if ((maxDate - minDate) < 30 * 86400000) maxDate.setDate(minDate.getDate() + 30);
-            
-            const dateColumns = [];
-            let curr = new Date(minDate);
-            while (curr <= maxDate) {
-                dateColumns.push(curr.toISOString().split('T')[0]);
-                curr.setDate(curr.getDate() + 1);
-            }
-            
-            const data = [];
-            data.push(["Rooms / Dates", ...dateColumns]);
-            
-            roomsConfig.forEach(group => {
-                group.beds.forEach(bed => {
-                    const row = [bed.id];
-                    dateColumns.forEach(date => {
-                        const key = `${bed.id}_${date}`;
-                        row.push(bookings[key] ? bookings[key].guestName : "");
-                    });
-                    data.push(row);
-                });
-            });
-            
-            const ws = XLSX.utils.aoa_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Bookings");
-            
-            const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-            
-            const writable = await currentFileHandle.createWritable();
-            await writable.write(excelBuffer);
-            await writable.close();
-            console.log("Auto-saved to matrix format in", currentFileHandle.name);
-        } catch (err) {
-            console.error("Auto-save failed:", err);
-        }
-    }
+}
 
 
-    function openModal(bed, group, dateObj, existingBooking) {
-        activeRoomId = bed.id;
-        activeDateIso = dateObj.iso;
+function openModal(bed, group, dateObj, existingBooking) {
+    activeRoomId = bed.id;
+    activeDateIso = dateObj.iso;
 
-        modalSubtitle.textContent = `${group.groupDesc} (${bed.name}) — ${dateObj.label}`;
-        
-        const guestNameInput = document.getElementById('guestName');
-        const numNightsSelect = document.getElementById('numNights');
-        
-        const bookingSourceInput = document.getElementById('bookingSource');
-        const bookingSourceOtherContainer = document.getElementById('bookingSourceOtherContainer');
-        const bookingSourceOtherInput = document.getElementById('bookingSourceOther');
-        const extraBedInput = document.getElementById('extraBed');
-        const extraBedChargeInput = document.getElementById('extraBedCharge');
-        const extraBedChargeContainer = document.getElementById('extraBedChargeContainer');
-        const showGroupBooking = document.getElementById('showGroupBooking');
-        const groupBookingContainer = document.getElementById('groupBookingContainer');
-        const btnDelete = document.getElementById('btnDelete');
+    modalSubtitle.textContent = `${group.groupDesc} (${bed.name}) — ${dateObj.label}`;
 
-        if (showGroupBooking) showGroupBooking.checked = false;
-        if (groupBookingContainer) groupBookingContainer.style.display = 'none';
+    const guestNameInput = document.getElementById('guestName');
+    const numNightsSelect = document.getElementById('numNights');
 
-        if (existingBooking) {
-            guestNameInput.value = existingBooking.guestName;
-            
-            if (bookingSourceInput && bookingSourceOtherContainer && bookingSourceOtherInput) {
-                const knownSources = ['Walk-in', 'Phone/Direct', 'Booking.com', 'Agoda', 'Expedia'];
-                if (existingBooking.bookingSource && !knownSources.includes(existingBooking.bookingSource)) {
-                    bookingSourceInput.style.display = 'none';
-                    bookingSourceOtherContainer.style.display = 'block';
-                    bookingSourceOtherInput.value = existingBooking.bookingSource;
-                } else {
-                    bookingSourceInput.style.display = 'block';
-                    bookingSourceOtherContainer.style.display = 'none';
-                    bookingSourceInput.value = existingBooking.bookingSource || 'Walk-in';
-                    bookingSourceOtherInput.value = '';
-                }
-            }
-            
-            if (extraBedInput) {
-                extraBedInput.checked = !!existingBooking.extraBed;
-                if (extraBedChargeContainer) extraBedChargeContainer.style.display = existingBooking.extraBed ? 'block' : 'none';
-            }
-            if (extraBedChargeInput) extraBedChargeInput.value = existingBooking.extraBedCharge || '';
-            if (btnDelete) btnDelete.style.display = 'block';
-        } else {
-            guestNameInput.value = '';
-            if (bookingSourceInput && bookingSourceOtherContainer && bookingSourceOtherInput) {
+    const bookingSourceInput = document.getElementById('bookingSource');
+    const bookingSourceOtherContainer = document.getElementById('bookingSourceOtherContainer');
+    const bookingSourceOtherInput = document.getElementById('bookingSourceOther');
+    const extraBedInput = document.getElementById('extraBed');
+    const extraBedChargeInput = document.getElementById('extraBedCharge');
+    const extraBedChargeContainer = document.getElementById('extraBedChargeContainer');
+    const showGroupBooking = document.getElementById('showGroupBooking');
+    const groupBookingContainer = document.getElementById('groupBookingContainer');
+    const btnDelete = document.getElementById('btnDelete');
+
+    if (showGroupBooking) showGroupBooking.checked = false;
+    if (groupBookingContainer) groupBookingContainer.style.display = 'none';
+
+    if (existingBooking) {
+        guestNameInput.value = existingBooking.guestName;
+
+        if (bookingSourceInput && bookingSourceOtherContainer && bookingSourceOtherInput) {
+            const knownSources = ['Walk-in', 'Phone/Direct', 'Booking.com', 'Agoda', 'Expedia'];
+            if (existingBooking.bookingSource && !knownSources.includes(existingBooking.bookingSource)) {
+                bookingSourceInput.style.display = 'none';
+                bookingSourceOtherContainer.style.display = 'block';
+                bookingSourceOtherInput.value = existingBooking.bookingSource;
+            } else {
                 bookingSourceInput.style.display = 'block';
                 bookingSourceOtherContainer.style.display = 'none';
-                bookingSourceInput.value = 'Walk-in';
+                bookingSourceInput.value = existingBooking.bookingSource || 'Walk-in';
                 bookingSourceOtherInput.value = '';
             }
-            if (extraBedInput) {
-                extraBedInput.checked = false;
-                if (extraBedChargeContainer) extraBedChargeContainer.style.display = 'none';
-            }
-            if (extraBedChargeInput) extraBedChargeInput.value = '';
-            if (btnDelete) btnDelete.style.display = 'none';
         }
 
-        const additionalRoomsContainer = document.getElementById('additionalRoomsContainer');
-        if (additionalRoomsContainer) {
-            additionalRoomsContainer.innerHTML = '';
-            roomsConfig.forEach(g => {
-                let hasRooms = false;
-                const groupHeader = document.createElement('div');
-                groupHeader.className = 'multi-select-group-title';
-                groupHeader.textContent = g.groupDesc || g.groupName;
-                
-                const pillsContainer = document.createElement('div');
-                pillsContainer.className = 'multi-select-pills';
+        if (extraBedInput) {
+            extraBedInput.checked = !!existingBooking.extraBed;
+            if (extraBedChargeContainer) extraBedChargeContainer.style.display = existingBooking.extraBed ? 'block' : 'none';
+        }
+        if (extraBedChargeInput) extraBedChargeInput.value = existingBooking.extraBedCharge || '';
+        if (btnDelete) btnDelete.style.display = 'block';
+    } else {
+        guestNameInput.value = '';
+        if (bookingSourceInput && bookingSourceOtherContainer && bookingSourceOtherInput) {
+            bookingSourceInput.style.display = 'block';
+            bookingSourceOtherContainer.style.display = 'none';
+            bookingSourceInput.value = 'Walk-in';
+            bookingSourceOtherInput.value = '';
+        }
+        if (extraBedInput) {
+            extraBedInput.checked = false;
+            if (extraBedChargeContainer) extraBedChargeContainer.style.display = 'none';
+        }
+        if (extraBedChargeInput) extraBedChargeInput.value = '';
+        if (btnDelete) btnDelete.style.display = 'none';
+    }
 
-                g.beds.forEach(b => {
-                    if (b.id === bed.id) return;
-                    hasRooms = true;
-                    const lbl = document.createElement('label');
-                    lbl.className = 'multi-select-pill';
-                    lbl.innerHTML = `<input type="checkbox" value="${b.id}" style="display:none;"> <span>${b.name}</span>`;
-                    pillsContainer.appendChild(lbl);
-                });
+    const additionalRoomsContainer = document.getElementById('additionalRoomsContainer');
+    if (additionalRoomsContainer) {
+        additionalRoomsContainer.innerHTML = '';
+        roomsConfig.forEach(g => {
+            let hasRooms = false;
+            const groupHeader = document.createElement('div');
+            groupHeader.className = 'multi-select-group-title';
+            groupHeader.textContent = g.groupDesc || g.groupName;
 
-                if (hasRooms) {
-                    additionalRoomsContainer.appendChild(groupHeader);
-                    additionalRoomsContainer.appendChild(pillsContainer);
-                }
+            const pillsContainer = document.createElement('div');
+            pillsContainer.className = 'multi-select-pills';
+
+            g.beds.forEach(b => {
+                if (b.id === bed.id) return;
+                hasRooms = true;
+                const lbl = document.createElement('label');
+                lbl.className = 'multi-select-pill';
+                lbl.innerHTML = `<input type="checkbox" value="${b.id}" style="display:none;"> <span>${b.name}</span>`;
+                pillsContainer.appendChild(lbl);
             });
-        }
-        
-        const nightsSelect = document.getElementById('numNights');
-        if (nightsSelect) nightsSelect.value = "1";
 
-        modalOverlay.classList.add('active');
-        setTimeout(() => guestNameInput.focus(), 100);
+            if (hasRooms) {
+                additionalRoomsContainer.appendChild(groupHeader);
+                additionalRoomsContainer.appendChild(pillsContainer);
+            }
+        });
     }
 
-    function closeModal() {
-        modalOverlay.classList.remove('active');
-        activeRoomId = null;
-        activeDateIso = null;
-    }
+    const nightsSelect = document.getElementById('numNights');
+    if (nightsSelect) nightsSelect.value = "1";
 
-    closeModalBtn.addEventListener('click', closeModal);
-    modalOverlay.addEventListener('click', (e) => {
-        if(e.target === modalOverlay) closeModal();
+    modalOverlay.classList.add('active');
+    setTimeout(() => guestNameInput.focus(), 100);
+}
+
+function closeModal() {
+    modalOverlay.classList.remove('active');
+    activeRoomId = null;
+    activeDateIso = null;
+}
+
+closeModalBtn.addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) closeModal();
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
+        closeModal();
+    }
+});
+// File Menu Modal handling
+const btnFileMenu = document.getElementById('btnFileMenu');
+const fileModal = document.getElementById('fileModal');
+const closeFileModal = document.getElementById('closeFileModal');
+if (btnFileMenu) {
+    btnFileMenu.addEventListener('click', () => {
+        fileModal.classList.add('active');
     });
+}
+if (closeFileModal) {
+    closeFileModal.addEventListener('click', () => {
+        fileModal.classList.remove('active');
+    });
+}
+// Close when clicking outside the modal content
+if (fileModal) {
+    fileModal.addEventListener('click', (e) => {
+        if (e.target === fileModal) {
+            fileModal.classList.remove('active');
+        }
+    });
+}
 
-    document.addEventListener('keydown', (e) => {
-        if(e.key === 'Escape' && modalOverlay.classList.contains('active')) {
+// Context Menu Logic
+const contextMenu = document.getElementById('contextMenu');
+const ctxCheckIn = document.getElementById('ctxCheckIn');
+const ctxCheckOut = document.getElementById('ctxCheckOut');
+const ctxClosed = document.getElementById('ctxClosed');
+const ctxClear = document.getElementById('ctxClear');
+let ctxRoomId = null;
+let ctxDateIso = null;
+
+document.addEventListener('click', () => {
+    if (contextMenu && contextMenu.classList.contains('active')) {
+        contextMenu.classList.remove('active');
+    }
+});
+
+function showContextMenu(e, bedId, dateIso) {
+    e.preventDefault();
+    ctxRoomId = bedId;
+    ctxDateIso = dateIso;
+
+    contextMenu.style.top = `${e.clientY}px`;
+    contextMenu.style.left = `${e.clientX}px`;
+    contextMenu.classList.add('active');
+}
+
+if (ctxCheckIn) ctxCheckIn.addEventListener('click', () => updateCtxBooking('checkin'));
+if (ctxCheckOut) ctxCheckOut.addEventListener('click', () => updateCtxBooking('checkout'));
+if (ctxClosed) ctxClosed.addEventListener('click', () => updateCtxBooking('closed'));
+if (ctxClear) ctxClear.addEventListener('click', () => {
+    const key = `${ctxRoomId}_${ctxDateIso}`;
+    delete bookings[key];
+    saveAndRender();
+});
+
+function updateCtxBooking(status) {
+    const key = `${ctxRoomId}_${ctxDateIso}`;
+    if (bookings[key]) {
+        bookings[key].status = status;
+        saveAndRender();
+    }
+}
+
+// Handle Actions
+function setBooking(status) {
+    if (!activeRoomId || !activeDateIso) return;
+    const name = guestNameInput.value.trim() || 'No Name';
+
+    const nightsSelect = document.getElementById('numNights');
+    const nights = nightsSelect ? parseInt(nightsSelect.value) || 1 : 1;
+
+    const bookingSourceInput = document.getElementById('bookingSource');
+    const bookingSourceOtherContainer = document.getElementById('bookingSourceOtherContainer');
+    const bookingSourceOtherInput = document.getElementById('bookingSourceOther');
+    const extraBedInput = document.getElementById('extraBed');
+    const extraBedChargeInput = document.getElementById('extraBedCharge');
+
+    let bookingSource = 'Walk-in';
+    if (bookingSourceOtherContainer && bookingSourceOtherContainer.style.display === 'block') {
+        bookingSource = bookingSourceOtherInput ? bookingSourceOtherInput.value.trim() || 'Other' : 'Other';
+    } else {
+        bookingSource = bookingSourceInput ? bookingSourceInput.value : 'Walk-in';
+    }
+
+    const extraBed = extraBedInput ? extraBedInput.checked : false;
+    const extraBedCharge = (extraBed && extraBedChargeInput) ? extraBedChargeInput.value : '';
+
+    const additionalRoomsContainer = document.getElementById('additionalRoomsContainer');
+    const selectedAdditionalRooms = [];
+    if (additionalRoomsContainer) {
+        const checkboxes = additionalRoomsContainer.querySelectorAll('input[type="checkbox"]:checked');
+        checkboxes.forEach(cb => selectedAdditionalRooms.push(cb.value));
+    }
+
+    const roomsToBook = [activeRoomId, ...selectedAdditionalRooms];
+
+    const baseDateObj = new Date(activeDateIso);
+
+    // Validation: Prevent Overbooking
+    for (const roomId of roomsToBook) {
+        for (let i = 0; i < nights; i++) {
+            const d = new Date(baseDateObj);
+            d.setDate(d.getDate() + i);
+            const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); const iso = `${y}-${m}-${day}`;
+            const key = `${roomId}_${iso}`;
+
+            if ((i > 0 || roomId !== activeRoomId) && bookings[key]) {
+                alert(`Cannot book! Room ${roomId} is already booked on ${iso} by ${bookings[key].guestName}.`);
+                return;
+            }
+        }
+    }
+
+    for (const roomId of roomsToBook) {
+        for (let i = 0; i < nights; i++) {
+            const d = new Date(baseDateObj);
+            d.setDate(d.getDate() + i);
+            const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); const iso = `${y}-${m}-${day}`;
+            const key = `${roomId}_${iso}`;
+            bookings[key] = {
+                guestName: name,
+                status: status,
+                bookingSource: bookingSource,
+                extraBed: extraBed,
+                extraBedCharge: extraBedCharge
+            };
+        }
+    }
+
+    saveAndRender();
+    closeModal();
+}
+
+const extraBedInput = document.getElementById('extraBed');
+const extraBedChargeContainer = document.getElementById('extraBedChargeContainer');
+const extraBedChargeInput = document.getElementById('extraBedCharge');
+if (extraBedInput && extraBedChargeContainer) {
+    extraBedInput.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            extraBedChargeContainer.style.display = 'block';
+        } else {
+            extraBedChargeContainer.style.display = 'none';
+            if (extraBedChargeInput) extraBedChargeInput.value = '';
+        }
+    });
+}
+
+const showGroupBooking = document.getElementById('showGroupBooking');
+const groupBookingContainer = document.getElementById('groupBookingContainer');
+if (showGroupBooking && groupBookingContainer) {
+    showGroupBooking.addEventListener('change', (e) => {
+        groupBookingContainer.style.display = e.target.checked ? 'block' : 'none';
+    });
+}
+
+const bookingSourceInputGlobal = document.getElementById('bookingSource');
+const bookingSourceOtherContainerGlobal = document.getElementById('bookingSourceOtherContainer');
+const bookingSourceOtherInputGlobal = document.getElementById('bookingSourceOther');
+const resetSourceBtn = document.getElementById('resetSourceBtn');
+
+if (bookingSourceInputGlobal && bookingSourceOtherContainerGlobal && bookingSourceOtherInputGlobal) {
+    bookingSourceInputGlobal.addEventListener('change', (e) => {
+        if (e.target.value === 'Other') {
+            bookingSourceInputGlobal.style.display = 'none';
+            bookingSourceOtherContainerGlobal.style.display = 'block';
+            bookingSourceOtherInputGlobal.focus();
+        }
+    });
+}
+
+if (resetSourceBtn) {
+    resetSourceBtn.addEventListener('click', () => {
+        if (bookingSourceOtherContainerGlobal && bookingSourceInputGlobal && bookingSourceOtherInputGlobal) {
+            bookingSourceOtherContainerGlobal.style.display = 'none';
+            bookingSourceOtherInputGlobal.value = '';
+            bookingSourceInputGlobal.style.display = 'block';
+            bookingSourceInputGlobal.value = 'Walk-in';
+        }
+    });
+}
+
+const btnDeleteGlobal = document.getElementById('btnDelete');
+if (btnDeleteGlobal) {
+    btnDeleteGlobal.addEventListener('click', () => {
+        if (confirm('Are you sure you want to delete this booking?')) {
+            const key = `${activeRoomId}_${activeDateIso}`;
+            delete bookings[key];
+            saveAndRender();
             closeModal();
         }
     });
-    // File Menu Modal handling
-    const btnFileMenu = document.getElementById('btnFileMenu');
-    const fileModal = document.getElementById('fileModal');
-    const closeFileModal = document.getElementById('closeFileModal');
-    if (btnFileMenu) {
-        btnFileMenu.addEventListener('click', () => {
-            fileModal.classList.add('active');
-        });
-    }
-    if (closeFileModal) {
-        closeFileModal.addEventListener('click', () => {
-            fileModal.classList.remove('active');
-        });
-    }
-    // Close when clicking outside the modal content
-    if (fileModal) {
-        fileModal.addEventListener('click', (e) => {
-            if (e.target === fileModal) {
-                fileModal.classList.remove('active');
-            }
-        });
-    }
+}
 
-    // Context Menu Logic
-    const contextMenu = document.getElementById('contextMenu');
-    const ctxCheckIn = document.getElementById('ctxCheckIn');
-    const ctxCheckOut = document.getElementById('ctxCheckOut');
-    const ctxClosed = document.getElementById('ctxClosed');
-    const ctxClear = document.getElementById('ctxClear');
-    let ctxRoomId = null;
-    let ctxDateIso = null;
+btnBooked.addEventListener('click', () => setBooking('booked'));
+btnCheckIn.addEventListener('click', () => setBooking('checkin'));
+btnCheckOut.addEventListener('click', () => setBooking('checkout'));
+btnClosed.addEventListener('click', () => setBooking('closed'));
 
-    document.addEventListener('click', () => {
-        if (contextMenu && contextMenu.classList.contains('active')) {
-            contextMenu.classList.remove('active');
-        }
-    });
+btnClear.addEventListener('click', () => {
+    if (!activeRoomId || !activeDateIso) return;
+    const key = `${activeRoomId}_${activeDateIso}`;
+    delete bookings[key];
+    saveAndRender();
+    closeModal();
+});
 
-    function showContextMenu(e, bedId, dateIso) {
-        e.preventDefault();
-        ctxRoomId = bedId;
-        ctxDateIso = dateIso;
-        
-        contextMenu.style.top = `${e.clientY}px`;
-        contextMenu.style.left = `${e.clientX}px`;
-        contextMenu.classList.add('active');
-    }
+// Date Navigation
+btnToday.addEventListener('click', () => {
+    const todayNow = new Date();
+    todayNow.setHours(0, 0, 0, 0);
+    const firstDay = new Date(todayNow.getFullYear(), todayNow.getMonth(), 1);
+    startDateOffset = Math.round((firstDay - todayNow) / (1000 * 60 * 60 * 24));
+    daysToView = new Date(todayNow.getFullYear(), todayNow.getMonth() + 1, 0).getDate();
 
-    if (ctxCheckIn) ctxCheckIn.addEventListener('click', () => updateCtxBooking('checkin'));
-    if (ctxCheckOut) ctxCheckOut.addEventListener('click', () => updateCtxBooking('checkout'));
-    if (ctxClosed) ctxClosed.addEventListener('click', () => updateCtxBooking('closed'));
-    if (ctxClear) ctxClear.addEventListener('click', () => {
-        const key = `${ctxRoomId}_${ctxDateIso}`;
-        delete bookings[key];
-        saveAndRender();
-    });
+    if (jumpMonthInput) jumpMonthInput.value = '';
+    renderTable();
+    scrollToToday();
+});
 
-    function updateCtxBooking(status) {
-        const key = `${ctxRoomId}_${ctxDateIso}`;
-        if(bookings[key]) {
-            bookings[key].status = status;
-            saveAndRender();
-        }
-    }
+if (jumpMonthInput) {
+    jumpMonthInput.addEventListener('change', (e) => {
+        if (!e.target.value) return;
+        const [year, month] = e.target.value.split('-');
 
-    // Handle Actions
-    function setBooking(status) {
-        if(!activeRoomId || !activeDateIso) return;
-        const name = guestNameInput.value.trim() || 'No Name';
-        
-        const nightsSelect = document.getElementById('numNights');
-        const nights = nightsSelect ? parseInt(nightsSelect.value) || 1 : 1;
-        
-        const bookingSourceInput = document.getElementById('bookingSource');
-        const bookingSourceOtherContainer = document.getElementById('bookingSourceOtherContainer');
-        const bookingSourceOtherInput = document.getElementById('bookingSourceOther');
-        const extraBedInput = document.getElementById('extraBed');
-        const extraBedChargeInput = document.getElementById('extraBedCharge');
-        
-        let bookingSource = 'Walk-in';
-        if (bookingSourceOtherContainer && bookingSourceOtherContainer.style.display === 'block') {
-            bookingSource = bookingSourceOtherInput ? bookingSourceOtherInput.value.trim() || 'Other' : 'Other';
-        } else {
-            bookingSource = bookingSourceInput ? bookingSourceInput.value : 'Walk-in';
-        }
-        
-        const extraBed = extraBedInput ? extraBedInput.checked : false;
-        const extraBedCharge = (extraBed && extraBedChargeInput) ? extraBedChargeInput.value : '';
+        // Go to 1st of that month
+        const selectedDate = new Date(year, month - 1, 1);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-        const additionalRoomsContainer = document.getElementById('additionalRoomsContainer');
-        const selectedAdditionalRooms = [];
-        if (additionalRoomsContainer) {
-            const checkboxes = additionalRoomsContainer.querySelectorAll('input[type="checkbox"]:checked');
-            checkboxes.forEach(cb => selectedAdditionalRooms.push(cb.value));
-        }
+        const diffTime = selectedDate - today;
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+        startDateOffset = diffDays;
 
-        const roomsToBook = [activeRoomId, ...selectedAdditionalRooms];
+        // Set daysToView to exactly how many days are in that month
+        const daysInMonth = new Date(year, month, 0).getDate();
+        daysToView = daysInMonth;
 
-        const baseDateObj = new Date(activeDateIso);
-
-        // Validation: Prevent Overbooking
-        for (const roomId of roomsToBook) {
-            for(let i=0; i<nights; i++) {
-                const d = new Date(baseDateObj);
-                d.setDate(d.getDate() + i);
-                const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); const iso = `${y}-${m}-${day}`;
-                const key = `${roomId}_${iso}`;
-                
-                if ((i > 0 || roomId !== activeRoomId) && bookings[key]) {
-                    alert(`Cannot book! Room ${roomId} is already booked on ${iso} by ${bookings[key].guestName}.`);
-                    return; 
-                }
-            }
-        }
-
-        for (const roomId of roomsToBook) {
-            for(let i=0; i<nights; i++) {
-                const d = new Date(baseDateObj);
-                d.setDate(d.getDate() + i);
-                const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); const iso = `${y}-${m}-${day}`;
-                const key = `${roomId}_${iso}`;
-                bookings[key] = { 
-                    guestName: name, 
-                    status: status,
-                    bookingSource: bookingSource,
-                    extraBed: extraBed,
-                    extraBedCharge: extraBedCharge
-                };
-            }
-        }
-        
-        saveAndRender();
-        closeModal();
-    }
-
-    const extraBedInput = document.getElementById('extraBed');
-    const extraBedChargeContainer = document.getElementById('extraBedChargeContainer');
-    const extraBedChargeInput = document.getElementById('extraBedCharge');
-    if (extraBedInput && extraBedChargeContainer) {
-        extraBedInput.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                extraBedChargeContainer.style.display = 'block';
-            } else {
-                extraBedChargeContainer.style.display = 'none';
-                if (extraBedChargeInput) extraBedChargeInput.value = '';
-            }
-        });
-    }
-
-    const showGroupBooking = document.getElementById('showGroupBooking');
-    const groupBookingContainer = document.getElementById('groupBookingContainer');
-    if (showGroupBooking && groupBookingContainer) {
-        showGroupBooking.addEventListener('change', (e) => {
-            groupBookingContainer.style.display = e.target.checked ? 'block' : 'none';
-        });
-    }
-
-    const bookingSourceInputGlobal = document.getElementById('bookingSource');
-    const bookingSourceOtherContainerGlobal = document.getElementById('bookingSourceOtherContainer');
-    const bookingSourceOtherInputGlobal = document.getElementById('bookingSourceOther');
-    const resetSourceBtn = document.getElementById('resetSourceBtn');
-    
-    if (bookingSourceInputGlobal && bookingSourceOtherContainerGlobal && bookingSourceOtherInputGlobal) {
-        bookingSourceInputGlobal.addEventListener('change', (e) => {
-            if (e.target.value === 'Other') {
-                bookingSourceInputGlobal.style.display = 'none';
-                bookingSourceOtherContainerGlobal.style.display = 'block';
-                bookingSourceOtherInputGlobal.focus();
-            }
-        });
-    }
-    
-    if (resetSourceBtn) {
-        resetSourceBtn.addEventListener('click', () => {
-            if (bookingSourceOtherContainerGlobal && bookingSourceInputGlobal && bookingSourceOtherInputGlobal) {
-                bookingSourceOtherContainerGlobal.style.display = 'none';
-                bookingSourceOtherInputGlobal.value = '';
-                bookingSourceInputGlobal.style.display = 'block';
-                bookingSourceInputGlobal.value = 'Walk-in';
-            }
-        });
-    }
-
-    const btnDeleteGlobal = document.getElementById('btnDelete');
-    if (btnDeleteGlobal) {
-        btnDeleteGlobal.addEventListener('click', () => {
-            if (confirm('Are you sure you want to delete this booking?')) {
-                const key = `${activeRoomId}_${activeDateIso}`;
-                delete bookings[key];
-                saveAndRender();
-                closeModal();
-            }
-        });
-    }
-
-    btnBooked.addEventListener('click', () => setBooking('booked'));
-    btnCheckIn.addEventListener('click', () => setBooking('checkin'));
-    btnCheckOut.addEventListener('click', () => setBooking('checkout'));
-    btnClosed.addEventListener('click', () => setBooking('closed'));
-    
-    btnClear.addEventListener('click', () => {
-        if(!activeRoomId || !activeDateIso) return;
-        const key = `${activeRoomId}_${activeDateIso}`;
-        delete bookings[key];
-        saveAndRender();
-        closeModal();
-    });
-
-    // Date Navigation
-    btnToday.addEventListener('click', () => {
-        const todayNow = new Date();
-        todayNow.setHours(0,0,0,0);
-        const firstDay = new Date(todayNow.getFullYear(), todayNow.getMonth(), 1);
-        startDateOffset = Math.round((firstDay - todayNow) / (1000 * 60 * 60 * 24));
-        daysToView = new Date(todayNow.getFullYear(), todayNow.getMonth() + 1, 0).getDate();
-        
-        if(jumpMonthInput) jumpMonthInput.value = '';
         renderTable();
-        scrollToToday();
     });
-    
-    if (jumpMonthInput) {
-        jumpMonthInput.addEventListener('change', (e) => {
-            if(!e.target.value) return;
-            const [year, month] = e.target.value.split('-');
-            
-            // Go to 1st of that month
-            const selectedDate = new Date(year, month - 1, 1);
-            const today = new Date();
-            today.setHours(0,0,0,0);
-            
-            const diffTime = selectedDate - today;
-            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-            startDateOffset = diffDays;
-            
-            // Set daysToView to exactly how many days are in that month
-            const daysInMonth = new Date(year, month, 0).getDate();
-            daysToView = daysInMonth;
-            
-            renderTable();
-        });
-    }
+}
 
-    // Search functionality
-    searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase().trim();
-        const cells = document.querySelectorAll('.day-cell');
-        
-        cells.forEach(cell => {
-            if (query === '') {
-                cell.style.opacity = '1';
-                cell.style.boxShadow = 'none';
-                return;
-            }
-            
-            const bookingEl = cell.querySelector('.booking-content');
-            if (bookingEl && bookingEl.textContent.toLowerCase().includes(query)) {
-                cell.style.opacity = '1';
-                cell.style.boxShadow = 'inset 0 0 10px var(--accent)';
-            } else {
-                cell.style.opacity = '0.1';
-                cell.style.boxShadow = 'none';
-            }
-        });
+// Search functionality
+searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
+    const cells = document.querySelectorAll('.day-cell');
+
+    cells.forEach(cell => {
+        if (query === '') {
+            cell.style.opacity = '1';
+            cell.style.boxShadow = 'none';
+            return;
+        }
+
+        const bookingEl = cell.querySelector('.booking-content');
+        if (bookingEl && bookingEl.textContent.toLowerCase().includes(query)) {
+            cell.style.opacity = '1';
+            cell.style.boxShadow = 'inset 0 0 10px var(--accent)';
+        } else {
+            cell.style.opacity = '0.1';
+            cell.style.boxShadow = 'none';
+        }
     });
+});
 
-    // Backup Export to Excel (XLSB format)
-    const btnExport = document.getElementById('btnExport');
-    if (btnExport) {
-        btnExport.addEventListener('click', () => {
-            if (typeof XLSX === 'undefined') {
-                alert('Export library is still loading. Please try again in a moment.');
-                return;
-            }
+// Backup Export to Excel (XLSB format)
+const btnExport = document.getElementById('btnExport');
+if (btnExport) {
+    btnExport.addEventListener('click', () => {
+        if (typeof XLSX === 'undefined') {
+            alert('Export library is still loading. Please try again in a moment.');
+            return;
+        }
 
-            // Create Data Array in Matrix Format
-            let allDates = [new Date().toISOString().split('T')[0]];
-            for (const key of Object.keys(bookings)) {
-                allDates.push(key.split('_').pop());
-            }
-            allDates.sort();
-            const minDate = new Date(allDates[0]);
-            const maxDate = new Date(allDates[allDates.length - 1]);
-            if ((maxDate - minDate) < 30 * 86400000) maxDate.setDate(minDate.getDate() + 30);
-            
-            const dateColumns = [];
-            let curr = new Date(minDate);
-            while (curr <= maxDate) {
-                dateColumns.push(curr.toISOString().split('T')[0]);
-                curr.setDate(curr.getDate() + 1);
-            }
-            
-            const data = [];
-            data.push(["Rooms / Dates", ...dateColumns]);
-            
-            roomsConfig.forEach(group => {
-                group.beds.forEach(bed => {
-                    const row = [bed.id];
-                    dateColumns.forEach(date => {
-                        const key = `${bed.id}_${date}`;
-                        row.push(bookings[key] ? bookings[key].guestName : "");
-                    });
-                    data.push(row);
+        // Create Data Array in Matrix Format
+        let allDates = [new Date().toISOString().split('T')[0]];
+        for (const key of Object.keys(bookings)) {
+            allDates.push(key.split('_').pop());
+        }
+        allDates.sort();
+        const minDate = new Date(allDates[0]);
+        const maxDate = new Date(allDates[allDates.length - 1]);
+        if ((maxDate - minDate) < 30 * 86400000) maxDate.setDate(minDate.getDate() + 30);
+
+        const dateColumns = [];
+        let curr = new Date(minDate);
+        while (curr <= maxDate) {
+            dateColumns.push(curr.toISOString().split('T')[0]);
+            curr.setDate(curr.getDate() + 1);
+        }
+
+        const data = [];
+        data.push(["Rooms / Dates", ...dateColumns]);
+
+        roomsConfig.forEach(group => {
+            group.beds.forEach(bed => {
+                const row = [bed.id];
+                dateColumns.forEach(date => {
+                    const key = `${bed.id}_${date}`;
+                    row.push(bookings[key] ? bookings[key].guestName : "");
                 });
+                data.push(row);
             });
-
-            // Create workbook and worksheet
-            const ws = XLSX.utils.aoa_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Bookings");
-
-            // Trigger file download as .xlsx
-            const fileName = "hotel_bookings_" + new Date().toISOString().split('T')[0] + ".xlsx";
-            XLSX.writeFile(wb, fileName);
         });
-    }
 
-    // --- Import (Restore) Logic ---
-    const btnImport = document.getElementById('btnImport');
-    console.log('Import button element:', btnImport);
-    const fileImport = document.getElementById('fileImport');
-    const btnNewFile = document.getElementById('btnNewFile');
-    
-    if (btnNewFile) {
-        btnNewFile.addEventListener('click', async () => {
-            if (window.showSaveFilePicker) {
-                try {
-                    const fileHandle = await window.showSaveFilePicker({
-                        suggestedName: 'New_Hotel_Bookings.xlsx',
-                        types: [{
-                            description: 'Excel Files',
-                            accept: {'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']}
-                        }]
-                    });
-                    currentFileHandle = fileHandle;
-                    
-                    // Clear current bookings
-                    bookings = {};
-                    saveAndRender();
-                    
-                    if(btnImport) btnImport.textContent = `Syncing: ${fileHandle.name}`;
-                    
-                    // Save empty file
-                    await autoSaveToExcel();
-                    
-                    renderTable();
-                    alert(`New file created: ${fileHandle.name}. Auto-save is now ACTIVE!`);
-                } catch (err) {
-                    if (err.name !== 'AbortError') {
-                        console.error(err);
-                        alert("Failed to create file.");
-                    }
-                }
-            } else {
-                alert("Your browser does not support creating files directly. Please use Chrome or Edge.");
-            }
-        });
-    }
-    
-    function parseDateCell(val) {
-        if (val === null || val === undefined || val === '') return null;
-        if (typeof val === 'number') {
-            const excelEpoch = new Date(Date.UTC(1899, 11, 30));
-            const parsedDate = new Date(excelEpoch.getTime() + val * 86400000);
-            if (!isNaN(parsedDate.getTime())) {
-                return parsedDate.toISOString().split('T')[0];
-            }
-        }
-        const str = String(val).trim();
-        if (!str) return null;
-        if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
-            return str.substring(0, 10);
-        }
-        if (/^\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{4}/.test(str)) {
-            const parts = str.split(/[\/\.-]/);
-            if (parts[0].length === 4) {
-                return `${parts[0]}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
-            } else {
-                return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
-            }
-        }
-        const cleanStr = str.toLowerCase().replace(/(st|nd|rd|th)/g, '');
-        const currentYear = new Date().getFullYear();
-        const d = new Date(`${cleanStr} ${currentYear}`);
-        if (!isNaN(d.getTime())) {
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${y}-${m}-${day}`;
-        }
-        return null;
-    }
+        // Create workbook and worksheet
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Bookings");
 
-    function normalizeRoomId(rawId) {
-        if (!rawId) return '';
-        let str = String(rawId).trim().toLowerCase();
-        str = str.replace(/^room\s+/i, '');
-        str = str.replace(/[\s\-]+/g, '_');
-        return str;
-    }
+        // Trigger file download as .xlsx
+        const fileName = "hotel_bookings_" + new Date().toISOString().split('T')[0] + ".xlsx";
+        XLSX.writeFile(wb, fileName);
+    });
+}
 
-    function parseImportedExcelData(json) {
-        let importedCount = 0;
-        let isMatrixFormat = false;
-        let matrixDates = [];
-        let matrixHeaderRowIndex = -1;
-        const monthCounts = {};
-        let targetDate = null;
-        
-        for (let i = 0; i < Math.min(json.length, 20); i++) {
-            const firstCell = json[i] && json[i][0] ? String(json[i][0]).toLowerCase() : '';
-            if (firstCell.includes('rooms') || firstCell.includes('room / date') || firstCell.includes('rooms / dates')) {
-                isMatrixFormat = true;
-                matrixHeaderRowIndex = i;
-                for (let col = 1; col < json[i].length; col++) {
-                    let dateVal = json[i][col];
-                    if (dateVal) {
-                        if (typeof dateVal === 'number') {
-                            const excelEpoch = new Date(Date.UTC(1899, 11, 30));
-                            const parsedDate = new Date(excelEpoch.getTime() + dateVal * 86400000);
-                            matrixDates[col] = parsedDate.toISOString().split('T')[0];
-                            continue;
-                        }
-                        
-                        let str = String(dateVal).toLowerCase().trim().replace(/(st|nd|rd|th)/, '');
-                        if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-                            matrixDates[col] = str;
-                            continue;
-                        }
-                        
-                        let currentYear = new Date().getFullYear();
-                        let d = new Date(`${str} ${currentYear}`);
-                        if (!isNaN(d.getTime())) {
-                            const y = d.getFullYear();
-                            const m = String(d.getMonth() + 1).padStart(2, '0');
-                            const day = String(d.getDate()).padStart(2, '0');
-                            matrixDates[col] = `${y}-${m}-${day}`;
-                        }
-                    }
-                }
-                break;
-            }
-        }
+// --- Import (Restore) Logic ---
+const btnImport = document.getElementById('btnImport');
+console.log('Import button element:', btnImport);
+const fileImport = document.getElementById('fileImport');
+const btnNewFile = document.getElementById('btnNewFile');
 
-        if (isMatrixFormat) {
-            for (let i = matrixHeaderRowIndex + 1; i < json.length; i++) {
-                const row = json[i];
-                if (!row || !row[0]) continue;
-                const roomId = normalizeRoomId(row[0]);
-                for (let col = 1; col < row.length; col++) {
-                    const guestName = row[col];
-                    const dateStr = matrixDates[col];
-                    if (guestName && dateStr && String(guestName).trim() !== '') {
-                        const key = `${roomId}_${dateStr}`;
-                        bookings[key] = { guestName: String(guestName).trim(), status: 'booked' };
-                        importedCount++;
-                        const ym = dateStr.substring(0, 7);
-                        monthCounts[ym] = (monthCounts[ym] || 0) + 1;
-                    }
+if (btnNewFile) {
+    btnNewFile.addEventListener('click', async () => {
+        if (window.showSaveFilePicker) {
+            try {
+                const fileHandle = await window.showSaveFilePicker({
+                    suggestedName: 'New_Hotel_Bookings.xlsx',
+                    types: [{
+                        description: 'Excel Files',
+                        accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] }
+                    }]
+                });
+                currentFileHandle = fileHandle;
+
+                // Clear current bookings
+                bookings = {};
+                saveAndRender();
+
+                if (btnImport) btnImport.textContent = `Syncing: ${fileHandle.name}`;
+
+                // Save empty file
+                await autoSaveToExcel();
+
+                renderTable();
+                alert(`New file created: ${fileHandle.name}. Auto-save is now ACTIVE!`);
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error(err);
+                    alert("Failed to create file.");
                 }
             }
         } else {
-            let startRow = 0;
-            if (json.length > 0 && json[0] && json[0][0]) {
-                const col0 = String(json[0][0]).toLowerCase();
-                const col1 = String(json[0][1] || '').toLowerCase();
-                if (col0.includes('room') || col1.includes('date')) {
-                    startRow = 1;
+            alert("Your browser does not support creating files directly. Please use Chrome or Edge.");
+        }
+    });
+}
+
+function parseDateCell(val) {
+    if (val === null || val === undefined || val === '') return null;
+    if (typeof val === 'number') {
+        const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+        const parsedDate = new Date(excelEpoch.getTime() + val * 86400000);
+        if (!isNaN(parsedDate.getTime())) {
+            return parsedDate.toISOString().split('T')[0];
+        }
+    }
+    const str = String(val).trim();
+    if (!str) return null;
+    if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+        return str.substring(0, 10);
+    }
+    if (/^\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{4}/.test(str)) {
+        const parts = str.split(/[\/\.-]/);
+        if (parts[0].length === 4) {
+            return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+        } else {
+            return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        }
+    }
+    const cleanStr = str.toLowerCase().replace(/(st|nd|rd|th)/g, '');
+    const currentYear = new Date().getFullYear();
+    const d = new Date(`${cleanStr} ${currentYear}`);
+    if (!isNaN(d.getTime())) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+    return null;
+}
+
+function normalizeRoomId(rawId) {
+    if (!rawId) return '';
+    let str = String(rawId).trim().toLowerCase();
+    str = str.replace(/^room\s+/i, '');
+    str = str.replace(/[\s\-]+/g, '_');
+    return str;
+}
+
+function parseImportedExcelData(json) {
+    let importedCount = 0;
+    let isMatrixFormat = false;
+    let matrixDates = [];
+    let matrixHeaderRowIndex = -1;
+    const monthCounts = {};
+    let targetDate = null;
+
+    for (let i = 0; i < Math.min(json.length, 20); i++) {
+        const firstCell = json[i] && json[i][0] ? String(json[i][0]).toLowerCase() : '';
+        if (firstCell.includes('rooms') || firstCell.includes('room / date') || firstCell.includes('rooms / dates')) {
+            isMatrixFormat = true;
+            matrixHeaderRowIndex = i;
+            for (let col = 1; col < json[i].length; col++) {
+                let dateVal = json[i][col];
+                if (dateVal) {
+                    if (typeof dateVal === 'number') {
+                        const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+                        const parsedDate = new Date(excelEpoch.getTime() + dateVal * 86400000);
+                        matrixDates[col] = parsedDate.toISOString().split('T')[0];
+                        continue;
+                    }
+
+                    let str = String(dateVal).toLowerCase().trim().replace(/(st|nd|rd|th)/, '');
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+                        matrixDates[col] = str;
+                        continue;
+                    }
+
+                    let currentYear = new Date().getFullYear();
+                    let d = new Date(`${str} ${currentYear}`);
+                    if (!isNaN(d.getTime())) {
+                        const y = d.getFullYear();
+                        const m = String(d.getMonth() + 1).padStart(2, '0');
+                        const day = String(d.getDate()).padStart(2, '0');
+                        matrixDates[col] = `${y}-${m}-${day}`;
+                    }
                 }
             }
-            
-            for (let i = startRow; i < json.length; i++) {
-                const row = json[i];
-                if (!row || row.length < 2) continue;
-                
-                const roomId = normalizeRoomId(row[0]);
-                let dateStr = parseDateCell(row[1]);
-                let guestName = row[2] !== undefined && row[2] !== null ? String(row[2]).trim() : 'booked';
-                let status = row[3] !== undefined && row[3] !== null ? String(row[3]).trim() : 'booked';
-                
-                if (roomId && dateStr) {
+            break;
+        }
+    }
+
+    if (isMatrixFormat) {
+        for (let i = matrixHeaderRowIndex + 1; i < json.length; i++) {
+            const row = json[i];
+            if (!row || !row[0]) continue;
+            const roomId = normalizeRoomId(row[0]);
+            for (let col = 1; col < row.length; col++) {
+                const guestName = row[col];
+                const dateStr = matrixDates[col];
+                if (guestName && dateStr && String(guestName).trim() !== '') {
                     const key = `${roomId}_${dateStr}`;
-                    bookings[key] = { guestName, status };
+                    bookings[key] = { guestName: String(guestName).trim(), status: 'booked' };
                     importedCount++;
                     const ym = dateStr.substring(0, 7);
                     monthCounts[ym] = (monthCounts[ym] || 0) + 1;
                 }
             }
         }
-        
-        let maxCount = 0;
-        let bestMonth = null;
-        for (const [ym, count] of Object.entries(monthCounts)) {
-            if (count > maxCount) {
-                maxCount = count;
-                bestMonth = ym;
+    } else {
+        let startRow = 0;
+        if (json.length > 0 && json[0] && json[0][0]) {
+            const col0 = String(json[0][0]).toLowerCase();
+            const col1 = String(json[0][1] || '').toLowerCase();
+            if (col0.includes('room') || col1.includes('date')) {
+                startRow = 1;
             }
         }
-        if (bestMonth) {
-            targetDate = `${bestMonth}-01`;
-        }
 
-        return { count: importedCount, targetDate };
+        for (let i = startRow; i < json.length; i++) {
+            const row = json[i];
+            if (!row || row.length < 2) continue;
+
+            const roomId = normalizeRoomId(row[0]);
+            let dateStr = parseDateCell(row[1]);
+            let guestName = row[2] !== undefined && row[2] !== null ? String(row[2]).trim() : 'booked';
+            let status = row[3] !== undefined && row[3] !== null ? String(row[3]).trim() : 'booked';
+
+            if (roomId && dateStr) {
+                const key = `${roomId}_${dateStr}`;
+                bookings[key] = { guestName, status };
+                importedCount++;
+                const ym = dateStr.substring(0, 7);
+                monthCounts[ym] = (monthCounts[ym] || 0) + 1;
+            }
+        }
     }
 
-    if (btnImport) {
-        btnImport.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            console.log('Import button clicked');
-            if (window.showOpenFilePicker) {
+    let maxCount = 0;
+    let bestMonth = null;
+    for (const [ym, count] of Object.entries(monthCounts)) {
+        if (count > maxCount) {
+            maxCount = count;
+            bestMonth = ym;
+        }
+    }
+    if (bestMonth) {
+        targetDate = `${bestMonth}-01`;
+    }
+
+    return { count: importedCount, targetDate };
+}
+
+if (btnImport) {
+    btnImport.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        console.log('Import button clicked');
+        if (window.showOpenFilePicker) {
+            try {
+                const [fileHandle] = await window.showOpenFilePicker({
+                    types: [{
+                        description: 'Excel Files',
+                        accept: {
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+                            'application/vnd.ms-excel.sheet.binary.macroenabled.12': ['.xlsb'],
+                            'application/vnd.ms-excel': ['.xls', '.xlsb']
+                        }
+                    }],
+                    multiple: false
+                });
+                currentFileHandle = fileHandle;
+                btnImport.innerHTML = `✅ Syncing`;
+                btnImport.title = `Syncing: ${fileHandle.name}`;
+
+                const file = await fileHandle.getFile();
+                const data = new Uint8Array(await file.arrayBuffer());
+                const workbook = XLSX.read(data, { type: 'array' });
+
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+
+                const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 }); // use raw dates
+
+                const result = parseImportedExcelData(json);
+                if (result.targetDate) {
+                    const d = new Date(result.targetDate + 'T00:00:00');
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const firstDayOfTargetMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+                    startDateOffset = Math.round((firstDayOfTargetMonth - today) / (1000 * 60 * 60 * 24));
+                    daysToView = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+                    if (jumpMonthInput) {
+                        jumpMonthInput.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                    }
+                }
+
+                saveAndRender();
+
+                if (result.count === 0) {
+                    alert(`Import finished, but NO bookings were found in ${fileHandle.name}. Ensure you selected the correct file.`);
+                } else {
+                    alert(`Successfully imported ${result.count} bookings. Auto-save to ${fileHandle.name} is now ACTIVE!`);
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error("File API error:", err);
+                    alert("Error importing file.");
+                }
+            }
+        } else if (fileImport) {
+            console.log('Fallback fileImport click');
+            fileImport.click();
+        }
+    });
+
+    if (fileImport) {
+        fileImport.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
                 try {
-                    const [fileHandle] = await window.showOpenFilePicker({
-                        types: [{
-                            description: 'Excel Files',
-                            accept: {
-                                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-                                'application/vnd.ms-excel.sheet.binary.macroenabled.12': ['.xlsb'],
-                                'application/vnd.ms-excel': ['.xls', '.xlsb']
-                            }
-                        }],
-                        multiple: false
-                    });
-                    currentFileHandle = fileHandle;
-                    btnImport.innerHTML = `✅ Syncing`;
-                    btnImport.title = `Syncing: ${fileHandle.name}`;
-                    
-                    const file = await fileHandle.getFile();
-                    const data = new Uint8Array(await file.arrayBuffer());
-                    const workbook = XLSX.read(data, {type: 'array'});
-                    
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
-                    
-                    const json = XLSX.utils.sheet_to_json(worksheet, {header: 1}); // use raw dates
-                    
+
+                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 }); // use raw dates
+
                     const result = parseImportedExcelData(json);
                     if (result.targetDate) {
                         const d = new Date(result.targetDate + 'T00:00:00');
                         const today = new Date();
-                        today.setHours(0,0,0,0);
+                        today.setHours(0, 0, 0, 0);
                         const firstDayOfTargetMonth = new Date(d.getFullYear(), d.getMonth(), 1);
                         startDateOffset = Math.round((firstDayOfTargetMonth - today) / (1000 * 60 * 60 * 24));
                         daysToView = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
@@ -1291,315 +1393,281 @@ document.addEventListener('DOMContentLoaded', () => {
                             jumpMonthInput.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
                         }
                     }
-                    
+
                     saveAndRender();
-                    
+
+                    btnImport.innerHTML = `✅ Imported`;
+                    btnImport.title = file.name;
                     if (result.count === 0) {
-                        alert(`Import finished, but NO bookings were found in ${fileHandle.name}. Ensure you selected the correct file.`);
+                        alert(`Import finished, but NO bookings were found in ${file.name}. Ensure you selected the correct file.`);
                     } else {
-                        alert(`Successfully imported ${result.count} bookings. Auto-save to ${fileHandle.name} is now ACTIVE!`);
+                        alert(`Successfully imported ${result.count} bookings. Note: Auto-save requires Chrome/Edge.`);
                     }
+                    fileImport.value = '';
                 } catch (err) {
-                    if (err.name !== 'AbortError') {
-                        console.error("File API error:", err);
-                        alert("Error importing file.");
-                    }
+                    console.error(err);
+                    alert("Error importing file.");
                 }
-            } else if (fileImport) {
-                console.log('Fallback fileImport click');
-                fileImport.click();
-            }
+            };
+            reader.readAsArrayBuffer(file);
         });
+    }
+}
 
-        if (fileImport) {
-            fileImport.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
+// --- POS Calculator Logic ---
+const btnCalc = document.getElementById('btnCalc');
+const calcModal = document.getElementById('calcModal');
+const btnCloseCalc = document.getElementById('btnCloseCalc');
 
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const data = new Uint8Array(e.target.result);
-                        const workbook = XLSX.read(data, {type: 'array'});
-                        
-                        const firstSheetName = workbook.SheetNames[0];
-                        const worksheet = workbook.Sheets[firstSheetName];
-                        
-                        const json = XLSX.utils.sheet_to_json(worksheet, {header: 1}); // use raw dates
-                        
-                        const result = parseImportedExcelData(json);
-                        if (result.targetDate) {
-                            const d = new Date(result.targetDate + 'T00:00:00');
-                            const today = new Date();
-                            today.setHours(0,0,0,0);
-                            const firstDayOfTargetMonth = new Date(d.getFullYear(), d.getMonth(), 1);
-                            startDateOffset = Math.round((firstDayOfTargetMonth - today) / (1000 * 60 * 60 * 24));
-                            daysToView = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-                            if (jumpMonthInput) {
-                                jumpMonthInput.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                            }
-                        }
-                        
-                        saveAndRender();
-                        
-                        btnImport.innerHTML = `✅ Imported`;
-                        btnImport.title = file.name;
-                        if (result.count === 0) {
-                            alert(`Import finished, but NO bookings were found in ${file.name}. Ensure you selected the correct file.`);
-                        } else {
-                            alert(`Successfully imported ${result.count} bookings. Note: Auto-save requires Chrome/Edge.`);
-                        }
-                        fileImport.value = ''; 
-                    } catch (err) {
-                        console.error(err);
-                        alert("Error importing file.");
-                    }
-                };
-                reader.readAsArrayBuffer(file);
-            });
+// Tabs
+const tabUsd = document.getElementById('tabUsd');
+const tabInr = document.getElementById('tabInr');
+const viewUsd = document.getElementById('viewUsd');
+const viewInr = document.getElementById('viewInr');
+
+// USD Elements
+const calcUsdAmount = document.getElementById('calcUsdAmount');
+const calcUsdRate = document.getElementById('calcUsdRate');
+const calcNprDirectAmount = document.getElementById('calcNprDirectAmount');
+const calcUsdSubtotal = document.getElementById('calcUsdSubtotal');
+const calcUsdSurcharge = document.getElementById('calcUsdSurcharge');
+const calcUsdTotal = document.getElementById('calcUsdTotal');
+
+// INR Elements
+const calcInrNprAmount = document.getElementById('calcInrNprAmount');
+const calcInrTotal = document.getElementById('calcInrTotal');
+
+async function fetchLiveUsdRate() {
+    try {
+        const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+        const data = await response.json();
+        if (data && data.rates && data.rates.NPR) {
+            calcUsdRate.value = data.rates.NPR.toFixed(2);
+            calcUsdRate.style.borderColor = "#4ade80";
+            setTimeout(() => calcUsdRate.style.borderColor = "", 1500);
+            updateUsdMath();
         }
+    } catch (error) {
+        console.error('Failed to fetch live USD rate:', error);
+    }
+}
+
+function switchTab(mode) {
+    if (mode === 'usd') {
+        tabUsd.style.background = '#222';
+        tabUsd.style.color = '#fff';
+        tabUsd.style.fontWeight = '700';
+        tabInr.style.background = 'transparent';
+        tabInr.style.color = 'var(--text-muted)';
+        tabInr.style.fontWeight = '400';
+        viewUsd.style.display = 'block';
+        viewInr.style.display = 'none';
+    } else {
+        tabInr.style.background = '#222';
+        tabInr.style.color = '#fff';
+        tabInr.style.fontWeight = '700';
+        tabUsd.style.background = 'transparent';
+        tabUsd.style.color = 'var(--text-muted)';
+        tabUsd.style.fontWeight = '400';
+        viewInr.style.display = 'block';
+        viewUsd.style.display = 'none';
+    }
+}
+
+function updateUsdMath(e) {
+    if (e && e.target === calcNprDirectAmount) {
+        calcUsdAmount.value = ''; // clear USD if NPR typed
+    } else if (e && (e.target === calcUsdAmount || e.target === calcUsdRate)) {
+        calcNprDirectAmount.value = ''; // clear NPR if USD typed
     }
 
-    // --- POS Calculator Logic ---
-    const btnCalc = document.getElementById('btnCalc');
-    const calcModal = document.getElementById('calcModal');
-    const btnCloseCalc = document.getElementById('btnCloseCalc');
+    let subtotal = 0;
+    if (calcNprDirectAmount && calcNprDirectAmount.value) {
+        subtotal = parseFloat(calcNprDirectAmount.value) || 0;
+    } else {
+        const usd = parseFloat(calcUsdAmount.value) || 0;
+        const rate = parseFloat(calcUsdRate.value) || 0;
+        subtotal = usd * rate;
+    }
+
+    const surcharge = subtotal * 0.04; // 4% POS
+    const total = subtotal + surcharge;
+
+    calcUsdSubtotal.textContent = `Rs. ${subtotal.toFixed(2)}`;
+    calcUsdSurcharge.textContent = `Rs. ${surcharge.toFixed(2)}`;
+    calcUsdTotal.textContent = `Rs. ${total.toFixed(2)}`;
+}
+
+function updateInrMath() {
+    const npr = parseFloat(calcInrNprAmount.value) || 0;
+    // 1.5 Rate
+    const inr = npr / 1.5;
+    calcInrTotal.textContent = `₹ ${inr.toFixed(2)}`;
+}
+
+if (btnCalc && calcModal && btnCloseCalc) {
+    btnCalc.addEventListener('click', () => {
+        calcModal.classList.add('active');
+        switchTab('usd'); // Default to USD on open
+        fetchLiveUsdRate();
+    });
+
+    btnCloseCalc.addEventListener('click', () => calcModal.classList.remove('active'));
+
+    tabUsd.addEventListener('click', () => switchTab('usd'));
+    tabInr.addEventListener('click', () => switchTab('inr'));
+
+    calcUsdAmount.addEventListener('input', updateUsdMath);
+    calcUsdRate.addEventListener('input', updateUsdMath);
+    if (calcNprDirectAmount) calcNprDirectAmount.addEventListener('input', updateUsdMath);
+
+    calcInrNprAmount.addEventListener('input', updateInrMath);
+}
+
+// Init
+const roomFilterInit = document.getElementById('roomFilter');
+if (roomFilterInit) roomFilterInit.addEventListener('change', renderTable);
+
+// Dashboard & Room Management Logic
+const btnToggleView = document.getElementById('btnToggleView');
+const calendarView = document.getElementById('calendarView');
+const dashboardView = document.getElementById('dashboardView');
+let isDashboardView = false;
+
+if (btnToggleView) {
+    btnToggleView.addEventListener('click', () => {
+        isDashboardView = !isDashboardView;
+        if (isDashboardView) {
+            calendarView.style.display = 'none';
+            dashboardView.style.display = 'block';
+            btnToggleView.innerHTML = '📅 Calendar';
+            renderAdminRooms();
+            updateDashboardStats();
+        } else {
+            dashboardView.style.display = 'none';
+            calendarView.style.display = 'block';
+            btnToggleView.innerHTML = '📊 Dashboard';
+            renderTable();
+        }
+    });
+}
+
+const dashRoomsContainer = document.getElementById('dashRoomsContainer');
+const btnAddRoomGroup = document.getElementById('btnAddRoomGroup');
+
+function renderAdminRooms() {
+    if (!dashRoomsContainer) return;
+    dashRoomsContainer.innerHTML = '';
     
-    // Tabs
-    const tabUsd = document.getElementById('tabUsd');
-    const tabInr = document.getElementById('tabInr');
-    const viewUsd = document.getElementById('viewUsd');
-    const viewInr = document.getElementById('viewInr');
-
-    // USD Elements
-    const calcUsdAmount = document.getElementById('calcUsdAmount');
-    const calcUsdRate = document.getElementById('calcUsdRate');
-    const calcNprDirectAmount = document.getElementById('calcNprDirectAmount');
-    const calcUsdSubtotal = document.getElementById('calcUsdSubtotal');
-    const calcUsdSurcharge = document.getElementById('calcUsdSurcharge');
-    const calcUsdTotal = document.getElementById('calcUsdTotal');
-
-    // INR Elements
-    const calcInrNprAmount = document.getElementById('calcInrNprAmount');
-    const calcInrTotal = document.getElementById('calcInrTotal');
-
-    async function fetchLiveUsdRate() {
-        try {
-            const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-            const data = await response.json();
-            if (data && data.rates && data.rates.NPR) {
-                calcUsdRate.value = data.rates.NPR.toFixed(2);
-                calcUsdRate.style.borderColor = "#4ade80"; 
-                setTimeout(() => calcUsdRate.style.borderColor = "", 1500);
-                updateUsdMath();
-            }
-        } catch (error) {
-            console.error('Failed to fetch live USD rate:', error);
-        }
-    }
-
-    function switchTab(mode) {
-        if (mode === 'usd') {
-            tabUsd.style.background = '#222';
-            tabUsd.style.color = '#fff';
-            tabUsd.style.fontWeight = '700';
-            tabInr.style.background = 'transparent';
-            tabInr.style.color = 'var(--text-muted)';
-            tabInr.style.fontWeight = '400';
-            viewUsd.style.display = 'block';
-            viewInr.style.display = 'none';
-        } else {
-            tabInr.style.background = '#222';
-            tabInr.style.color = '#fff';
-            tabInr.style.fontWeight = '700';
-            tabUsd.style.background = 'transparent';
-            tabUsd.style.color = 'var(--text-muted)';
-            tabUsd.style.fontWeight = '400';
-            viewInr.style.display = 'block';
-            viewUsd.style.display = 'none';
-        }
-    }
-
-    function updateUsdMath(e) {
-        if (e && e.target === calcNprDirectAmount) {
-            calcUsdAmount.value = ''; // clear USD if NPR typed
-        } else if (e && (e.target === calcUsdAmount || e.target === calcUsdRate)) {
-            calcNprDirectAmount.value = ''; // clear NPR if USD typed
-        }
-
-        let subtotal = 0;
-        if (calcNprDirectAmount && calcNprDirectAmount.value) {
-            subtotal = parseFloat(calcNprDirectAmount.value) || 0;
-        } else {
-            const usd = parseFloat(calcUsdAmount.value) || 0;
-            const rate = parseFloat(calcUsdRate.value) || 0;
-            subtotal = usd * rate;
-        }
-
-        const surcharge = subtotal * 0.04; // 4% POS
-        const total = subtotal + surcharge;
-
-        calcUsdSubtotal.textContent = `Rs. ${subtotal.toFixed(2)}`;
-        calcUsdSurcharge.textContent = `Rs. ${surcharge.toFixed(2)}`;
-        calcUsdTotal.textContent = `Rs. ${total.toFixed(2)}`;
-    }
-
-    function updateInrMath() {
-        const npr = parseFloat(calcInrNprAmount.value) || 0;
-        // 1.5 Rate
-        const inr = npr / 1.5;
-        calcInrTotal.textContent = `₹ ${inr.toFixed(2)}`;
-    }
-
-    if (btnCalc && calcModal && btnCloseCalc) {
-        btnCalc.addEventListener('click', () => {
-            calcModal.classList.add('active');
-            switchTab('usd'); // Default to USD on open
-            fetchLiveUsdRate();
-        });
+    roomsConfig.forEach((group, gIndex) => {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'admin-group';
         
-        btnCloseCalc.addEventListener('click', () => calcModal.classList.remove('active'));
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'admin-group-header';
         
-        tabUsd.addEventListener('click', () => switchTab('usd'));
-        tabInr.addEventListener('click', () => switchTab('inr'));
-
-        calcUsdAmount.addEventListener('input', updateUsdMath);
-        calcUsdRate.addEventListener('input', updateUsdMath);
-        if (calcNprDirectAmount) calcNprDirectAmount.addEventListener('input', updateUsdMath);
-        
-        calcInrNprAmount.addEventListener('input', updateInrMath);
-    }
-
-    // Init
-    const roomFilterInit = document.getElementById('roomFilter');
-    if (roomFilterInit) roomFilterInit.addEventListener('change', renderTable);
-
-    // Admin Panel Logic
-    const btnSettings = document.getElementById('btnSettings');
-    const settingsModal = document.getElementById('settingsModal');
-    const closeSettingsModal = document.getElementById('closeSettingsModal');
-    const btnAdminCancel = document.getElementById('btnAdminCancel');
-    const btnAdminSave = document.getElementById('btnAdminSave');
-    const adminRoomsContainer = document.getElementById('adminRoomsContainer');
-    const btnAdminAddGroup = document.getElementById('btnAdminAddGroup');
-
-    let tempRoomsConfig = [];
-
-    function renderAdminRooms() {
-        adminRoomsContainer.innerHTML = '';
-        tempRoomsConfig.forEach((group, gIndex) => {
-            const groupDiv = document.createElement('div');
-            groupDiv.className = 'admin-group';
-            
-            const headerDiv = document.createElement('div');
-            headerDiv.className = 'admin-group-header';
-            
-            const inputName = document.createElement('input');
-            inputName.type = 'text';
-            inputName.value = group.groupName;
-            inputName.placeholder = 'Group Name (e.g. Room 204)';
-            inputName.oninput = (e) => { tempRoomsConfig[gIndex].groupName = e.target.value; };
-            
-            const inputDesc = document.createElement('input');
-            inputDesc.type = 'text';
-            inputDesc.value = group.groupDesc;
-            inputDesc.placeholder = 'Description (e.g. 4 Bed AC)';
-            inputDesc.oninput = (e) => { tempRoomsConfig[gIndex].groupDesc = e.target.value; };
-            
-            headerDiv.appendChild(inputName);
-            headerDiv.appendChild(inputDesc);
-
-            const btnDelGroup = document.createElement('button');
-            btnDelGroup.className = 'btn-delete-group';
-            btnDelGroup.innerHTML = '🗑️';
-            btnDelGroup.onclick = () => {
-                tempRoomsConfig.splice(gIndex, 1);
-                renderAdminRooms();
-            };
-
-            const bedListDiv = document.createElement('div');
-            bedListDiv.className = 'admin-bed-list';
-
-            group.beds.forEach((bed, bIndex) => {
-                const bedItem = document.createElement('div');
-                bedItem.className = 'admin-bed-item';
-                
-                const inputBedId = document.createElement('input');
-                inputBedId.type = 'text';
-                inputBedId.value = bed.id;
-                inputBedId.placeholder = 'ID';
-                inputBedId.oninput = (e) => { tempRoomsConfig[gIndex].beds[bIndex].id = e.target.value; };
-
-                const inputBedName = document.createElement('input');
-                inputBedName.type = 'text';
-                inputBedName.value = bed.name;
-                inputBedName.placeholder = 'Name';
-                inputBedName.oninput = (e) => { tempRoomsConfig[gIndex].beds[bIndex].name = e.target.value; };
-
-                const btnDelBed = document.createElement('button');
-                btnDelBed.className = 'btn-delete-bed';
-                btnDelBed.innerHTML = '&times;';
-                btnDelBed.onclick = () => {
-                    tempRoomsConfig[gIndex].beds.splice(bIndex, 1);
-                    renderAdminRooms();
-                };
-
-                bedItem.appendChild(inputBedId);
-                bedItem.appendChild(inputBedName);
-                bedItem.appendChild(btnDelBed);
-                bedListDiv.appendChild(bedItem);
-            });
-
-            const btnAddBed = document.createElement('button');
-            btnAddBed.className = 'btn-minimal';
-            btnAddBed.style.cssText = "border: 1px solid var(--glass-border); padding: 0.25rem 0.5rem; color: var(--text-light); font-size: 0.8rem; margin-top: 0.5rem; cursor: pointer;";
-            btnAddBed.textContent = '+ Add Bed';
-            btnAddBed.onclick = () => {
-                tempRoomsConfig[gIndex].beds.push({ id: `new_${Date.now()}`, name: 'New Bed' });
-                renderAdminRooms();
-            };
-
-            groupDiv.appendChild(headerDiv);
-            groupDiv.appendChild(btnDelGroup);
-            groupDiv.appendChild(bedListDiv);
-            groupDiv.appendChild(btnAddBed);
-            adminRoomsContainer.appendChild(groupDiv);
-        });
-    }
-
-    if (btnSettings) {
-        btnSettings.addEventListener('click', () => {
-            tempRoomsConfig = JSON.parse(JSON.stringify(roomsConfig));
-            renderAdminRooms();
-            settingsModal.classList.add('active');
-        });
-    }
-
-    if (closeSettingsModal) closeSettingsModal.addEventListener('click', () => settingsModal.classList.remove('active'));
-    if (btnAdminCancel) btnAdminCancel.addEventListener('click', () => settingsModal.classList.remove('active'));
-
-    if (btnAdminSave) {
-        btnAdminSave.addEventListener('click', () => {
-            roomsConfig = JSON.parse(JSON.stringify(tempRoomsConfig));
+        const inputName = document.createElement('input');
+        inputName.type = 'text';
+        inputName.value = group.groupName;
+        inputName.placeholder = 'Group Name (e.g. Room 204)';
+        inputName.onchange = (e) => { 
+            roomsConfig[gIndex].groupName = e.target.value; 
             saveAndRender();
-            settingsModal.classList.remove('active');
-            alert("Room configurations saved successfully!");
-        });
-    }
+        };
+        
+        const inputDesc = document.createElement('input');
+        inputDesc.type = 'text';
+        inputDesc.value = group.groupDesc;
+        inputDesc.placeholder = 'Description (e.g. 4 Bed AC)';
+        inputDesc.onchange = (e) => { 
+            roomsConfig[gIndex].groupDesc = e.target.value; 
+            saveAndRender();
+        };
+        
+        headerDiv.appendChild(inputName);
+        headerDiv.appendChild(inputDesc);
 
-    if (btnAdminAddGroup) {
-        btnAdminAddGroup.addEventListener('click', () => {
-            tempRoomsConfig.push({
-                groupName: 'New Room',
-                groupDesc: 'Description',
-                beds: [{ id: `bed_${Date.now()}`, name: 'Bed 1' }]
-            });
-            renderAdminRooms();
-        });
-    }
+        const btnDelGroup = document.createElement('button');
+        btnDelGroup.className = 'btn-delete-group';
+        btnDelGroup.textContent = 'Delete Room';
+        btnDelGroup.onclick = () => {
+            if(confirm('Are you sure you want to delete this entire room and all its beds?')) {
+                roomsConfig.splice(gIndex, 1);
+                saveAndRender();
+            }
+        };
 
-    if (!auth) {
-        renderTable();
-        scrollToToday();
-    }
+        const bedListDiv = document.createElement('div');
+        bedListDiv.className = 'admin-bed-list';
+
+        group.beds.forEach((bed, bIndex) => {
+            const bedItem = document.createElement('div');
+            bedItem.className = 'admin-bed-item';
+            
+            const inputBedId = document.createElement('input');
+            inputBedId.type = 'text';
+            inputBedId.value = bed.id;
+            inputBedId.placeholder = 'ID';
+            inputBedId.onchange = (e) => { 
+                roomsConfig[gIndex].beds[bIndex].id = e.target.value; 
+                saveAndRender();
+            };
+
+            const inputBedName = document.createElement('input');
+            inputBedName.type = 'text';
+            inputBedName.value = bed.name;
+            inputBedName.placeholder = 'Name';
+            inputBedName.onchange = (e) => { 
+                roomsConfig[gIndex].beds[bIndex].name = e.target.value; 
+                saveAndRender();
+            };
+
+            const btnDelBed = document.createElement('button');
+            btnDelBed.className = 'btn-delete-bed';
+            btnDelBed.innerHTML = '&times;';
+            btnDelBed.onclick = () => {
+                if(confirm('Delete this bed?')) {
+                    roomsConfig[gIndex].beds.splice(bIndex, 1);
+                    saveAndRender();
+                }
+            };
+
+            bedItem.appendChild(inputBedId);
+            bedItem.appendChild(inputBedName);
+            bedItem.appendChild(btnDelBed);
+            bedListDiv.appendChild(bedItem);
+        });
+
+        const btnAddBed = document.createElement('button');
+        btnAddBed.className = 'btn-minimal';
+        btnAddBed.style.cssText = "border: 1px solid var(--glass-border); padding: 0.5rem 1rem; color: var(--text-light); font-size: 0.85rem; margin-top: 0.5rem; cursor: pointer; border-radius: 4px; display: inline-block;";
+        btnAddBed.textContent = '+ Add Bed';
+        btnAddBed.onclick = () => {
+            roomsConfig[gIndex].beds.push({ id: `new_${Date.now()}`, name: 'New Bed' });
+            saveAndRender();
+        };
+
+        groupDiv.appendChild(headerDiv);
+        groupDiv.appendChild(btnDelGroup);
+        groupDiv.appendChild(bedListDiv);
+        groupDiv.appendChild(btnAddBed);
+        dashRoomsContainer.appendChild(groupDiv);
+    });
+}
+
+if (btnAddRoomGroup) {
+    btnAddRoomGroup.addEventListener('click', () => {
+        roomsConfig.push({
+            groupName: 'New Room',
+            groupDesc: 'Description',
+            beds: [{ id: `bed_${Date.now()}`, name: 'Bed 1' }]
+        });
+        saveAndRender();
+    });
+}
+
+if (!auth) {
+    renderTable();
+    scrollToToday();
+}
 });

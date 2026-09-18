@@ -166,12 +166,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (btnLoginGoogle) {
             btnLoginGoogle.addEventListener('click', () => {
-                btnLoginGoogle.innerHTML = 'Redirecting to Google...';
+                btnLoginGoogle.innerHTML = 'Opening Google Login...';
                 const provider = new firebase.auth.GoogleAuthProvider();
-                auth.signInWithRedirect(provider).catch(error => {
+                auth.signInWithPopup(provider).catch(error => {
                     loginError.textContent = error.message;
                     loginError.style.display = "block";
-                    btnLoginGoogle.innerHTML = 'Sign in with Google';
+                    btnLoginGoogle.innerHTML = 'Continue with Google';
                 });
             });
         }

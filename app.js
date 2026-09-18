@@ -1659,6 +1659,7 @@ function renderAdminRooms() {
                 saveAndRender();
             }
         };
+        headerDiv.appendChild(btnDelGroup);
 
         const bedListDiv = document.createElement('div');
         bedListDiv.className = 'admin-bed-list';
@@ -1711,7 +1712,6 @@ function renderAdminRooms() {
         };
 
         groupDiv.appendChild(headerDiv);
-        groupDiv.appendChild(btnDelGroup);
         groupDiv.appendChild(bedListDiv);
         groupDiv.appendChild(btnAddBed);
         dashRoomsContainer.appendChild(groupDiv);

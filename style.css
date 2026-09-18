@@ -826,6 +826,8 @@ input[type=number] {
 }
 .admin-group-header {
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 1rem;
     margin-bottom: 0.5rem;
 }
@@ -836,6 +838,7 @@ input[type=number] {
     padding: 0.75rem;
     border-radius: 6px;
     flex: 1;
+    min-width: 150px;
 }
 .admin-bed-list {
     display: flex;
@@ -856,21 +859,24 @@ input[type=number] {
     background: transparent;
     border: none;
     color: white;
-    width: 70px;
     font-size: 0.9rem;
+}
+.admin-bed-item input:first-child {
+    width: 60px;
+}
+.admin-bed-item input:nth-child(2) {
+    width: 130px;
 }
 .admin-bed-item input:focus {
     outline: none;
     border-bottom: 1px solid var(--text-muted);
 }
 .btn-delete-group {
-    position: absolute;
-    top: 1.25rem;
-    right: 1rem;
     background: rgba(239, 68, 68, 0.2);
     border: 1px solid #ef4444;
-    border-radius: 4px;
-    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    white-space: nowrap;
     color: #ef4444;
     cursor: pointer;
     font-size: 0.8rem;

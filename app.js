@@ -75,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnLoginGoogle = document.getElementById('btnLoginGoogle');
     const btnLogout = document.getElementById('btnLogout');
     const loginError = document.getElementById('loginError');
+    const userInfo = document.getElementById('userInfo');
 
     let authInitialized = false;
 
@@ -92,12 +93,46 @@ document.addEventListener('DOMContentLoaded', () => {
             if (user) {
                 currentUserUid = user.uid;
                 if (loginOverlay) loginOverlay.classList.remove('active');
-                if (btnLogout) btnLogout.style.display = 'block';
+                
+                const userProfileContainer = document.getElementById('userProfileContainer');
+                if (userProfileContainer) userProfileContainer.style.display = 'block';
+                
+                const badge = document.getElementById('userProfileBadge');
+                if (badge) {
+                    if (user.photoURL) {
+                        badge.innerHTML = `<img src="${user.photoURL}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+                    } else {
+                        badge.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
+                    }
+                }
+
+                if (userInfo) {
+                    userInfo.textContent = user.displayName || 'Manager';
+                }
+                const userProfileNameDisplay = document.getElementById('userProfileNameDisplay');
+                if (userProfileNameDisplay) {
+                    userProfileNameDisplay.textContent = user.displayName || 'Manager';
+                }
+                const userEmail = document.getElementById('userEmail');
+                if (userEmail) {
+                    userEmail.textContent = user.email || '';
+                }
 
                 if (db) {
                     db.collection('userBookings').doc(currentUserUid).onSnapshot((doc) => {
                         if (doc.exists) {
                             let data = doc.data();
+                            if (data.photoBase64) {
+                                const badge = document.getElementById('userProfileBadge');
+                                if (badge) badge.innerHTML = `<img src="${data.photoBase64}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+                            }
+                            if (data.hotelName) {
+                                const userInfo = document.getElementById('userInfo');
+                                if (userInfo) userInfo.textContent = data.hotelName;
+                                const userProfileNameDisplay = document.getElementById('userProfileNameDisplay');
+                                if (userProfileNameDisplay) userProfileNameDisplay.textContent = data.hotelName;
+                            }
+                            
                             if (data.roomsConfig) {
                                 bookings = data.bookings || {};
                                 roomsConfig = data.roomsConfig;
@@ -127,7 +162,10 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 currentUserUid = null;
                 if (loginOverlay) loginOverlay.classList.add('active');
-                if (btnLogout) btnLogout.style.display = 'none';
+                
+                const userProfileContainer = document.getElementById('userProfileContainer');
+                if (userProfileContainer) userProfileContainer.style.display = 'none';
+                
                 if (roomRows) roomRows.innerHTML = '';
             }
         });
@@ -216,6 +254,124 @@ document.addEventListener('DOMContentLoaded', () => {
                 auth.signOut().then(() => {
                     showToast("Logout Successful!", "success");
                 });
+            });
+        }
+        const userProfileToggle = document.getElementById('userProfileToggle');
+        const userDropdown = document.getElementById('userDropdown');
+        if (userProfileToggle && userDropdown) {
+            userProfileToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userDropdown.style.display = userDropdown.style.display === 'none' ? 'flex' : 'none';
+            });
+            document.addEventListener('click', (e) => {
+                if (!userDropdown.contains(e.target) && !userProfileToggle.contains(e.target)) {
+                    userDropdown.style.display = 'none';
+                }
+            });
+        }
+
+        const btnEditProfile = document.getElementById('btnEditProfile');
+        const editProfileModal = document.getElementById('editProfileModal');
+        const closeEditProfileModal = document.getElementById('closeEditProfileModal');
+        const editProfileName = document.getElementById('editProfileName');
+        const editProfilePhoto = document.getElementById('editProfilePhoto');
+        const editProfilePreview = document.getElementById('editProfilePreview');
+        const btnSaveProfile = document.getElementById('btnSaveProfile');
+        let currentPhotoBase64 = null;
+
+        if (btnEditProfile && editProfileModal) {
+            btnEditProfile.addEventListener('click', () => {
+                const user = auth.currentUser;
+                if (user) {
+                    editProfileName.value = user.displayName || '';
+                    if (user.photoURL) {
+                        editProfilePreview.src = user.photoURL;
+                        editProfilePreview.style.display = 'block';
+                        currentPhotoBase64 = user.photoURL;
+                    } else {
+                        editProfilePreview.style.display = 'none';
+                        currentPhotoBase64 = null;
+                    }
+                    editProfilePhoto.value = '';
+                    editProfileModal.classList.add('active');
+                    if (userDropdown) userDropdown.style.display = 'none';
+                }
+            });
+        }
+        if (closeEditProfileModal && editProfileModal) {
+            closeEditProfileModal.addEventListener('click', () => {
+                editProfileModal.classList.remove('active');
+            });
+        }
+        if (editProfilePhoto) {
+            editProfilePhoto.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            const MAX_WIDTH = 200;
+                            const MAX_HEIGHT = 200;
+                            let width = img.width;
+                            let height = img.height;
+                            if (width > height) {
+                                if (width > MAX_WIDTH) {
+                                    height *= MAX_WIDTH / width;
+                                    width = MAX_WIDTH;
+                                }
+                            } else {
+                                if (height > MAX_HEIGHT) {
+                                    width *= MAX_HEIGHT / height;
+                                    height = MAX_HEIGHT;
+                                }
+                            }
+                            canvas.width = width;
+                            canvas.height = height;
+                            ctx.drawImage(img, 0, 0, width, height);
+                            currentPhotoBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                            editProfilePreview.src = currentPhotoBase64;
+                            editProfilePreview.style.display = 'block';
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        if (btnSaveProfile) {
+            btnSaveProfile.addEventListener('click', () => {
+                const user = auth.currentUser;
+                if (user) {
+                    btnSaveProfile.textContent = 'Saving...';
+                    user.updateProfile({
+                        displayName: editProfileName.value
+                    }).then(() => {
+                        const dataToSave = { hotelName: editProfileName.value };
+                        if (currentPhotoBase64) dataToSave.photoBase64 = currentPhotoBase64;
+                        if (db) {
+                            return db.collection('userBookings').doc(currentUserUid).set(dataToSave, { merge: true });
+                        }
+                    }).then(() => {
+                        btnSaveProfile.textContent = 'Save Profile';
+                        editProfileModal.classList.remove('active');
+                        const badge = document.getElementById('userProfileBadge');
+                        if (badge && currentPhotoBase64) {
+                            badge.innerHTML = `<img src="${currentPhotoBase64}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+                        }
+                        const userInfo = document.getElementById('userInfo');
+                        if (userInfo) userInfo.textContent = editProfileName.value || 'Manager';
+                        const userProfileNameDisplay = document.getElementById('userProfileNameDisplay');
+                        if (userProfileNameDisplay) userProfileNameDisplay.textContent = editProfileName.value || 'Manager';
+                        if (typeof showToast === 'function') showToast("Profile updated!", "success");
+                    }).catch(error => {
+                        btnSaveProfile.textContent = 'Save Profile';
+                        console.error("Error updating profile", error);
+                        if (typeof showToast === 'function') showToast("Failed to update profile", "error");
+                    });
+                }
             });
         }
     }

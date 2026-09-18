@@ -71,8 +71,22 @@ main {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 1.5rem;
-    background: var(--bg-dark);
+    padding: 0.75rem 1.5rem;
+    background: rgba(10, 10, 10, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    background: #0a0a0a;
     border-bottom: 1px solid var(--glass-border);
 }
 
@@ -265,7 +279,7 @@ input[type=number] {
     border-bottom: 1px solid #333;
     position: sticky;
     top: 0;
-    z-index: 40;
+    z-index: 70; /* Increased to be above group titles and sticky left column */
 }
 
 .today-header {
@@ -285,7 +299,7 @@ input[type=number] {
     top: 0;
     background: #000000;
     color: #fff;
-    z-index: 60;
+    z-index: 80; /* Highest z-index for the top-left corner */
     border-right: 1px solid var(--glass-border);
 }
 

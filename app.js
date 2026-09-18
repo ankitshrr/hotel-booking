@@ -26,6 +26,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const searchInput = document.getElementById('guestSearch');
 
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.textContent = message;
+        toast.className = `toast toast-${type}`;
+        document.body.appendChild(toast);
+        
+        // Trigger reflow
+        void toast.offsetWidth;
+        toast.classList.add('show');
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
     // Firebase Configuration
     const firebaseConfig = {
         apiKey: "AIzaSyCRnEgvdzDFO7Q5EZxgWcxCpwz_GKIrI_o",
@@ -137,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isLoginMode) {
                     auth.signInWithEmailAndPassword(email, password)
                         .then(() => {
-                            alert("Login Successful!");
+                            showToast("Login Successful!", "success");
                         })
                         .catch(error => {
                             if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-login-credentials') {
@@ -150,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     auth.createUserWithEmailAndPassword(email, password)
                         .then(() => {
-                            alert("Account Created & Login Successful!");
+                            showToast("Account Created & Login Successful!", "success");
                         })
                         .catch(error => {
                             if (error.code === 'auth/email-already-in-use') {
@@ -179,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnLogout) {
             btnLogout.addEventListener('click', () => {
                 auth.signOut().then(() => {
-                    alert("Logout Successful!");
+                    showToast("Logout Successful!", "success");
                 });
             });
         }

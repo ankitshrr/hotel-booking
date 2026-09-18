@@ -474,6 +474,11 @@ input[type=number] {
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
 }
 
+.login-modal {
+    overflow: hidden !important;
+    max-height: fit-content !important;
+}
+
 .modal-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;

@@ -24,7 +24,10 @@
             </div>
             
             <div class="action-buttons" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
-                <button class="btn btn-booked" id="btnLoginEmail" style="width: 100%; font-weight: 700;">Login / Register</button>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-booked" id="btnLoginEmail" style="flex: 1; font-weight: 700;">Login</button>
+                    <button class="btn btn-available" id="btnRegisterEmail" style="flex: 1; font-weight: 700; border-color: var(--glass-border); color: #fff;">Register</button>
+                </div>
                 <div style="text-align: center; font-size: 0.85rem; color: var(--text-muted); margin: 0.25rem 0;">— OR —</div>
                 <button class="btn btn-available" id="btnLoginGoogle" style="width: 100%; border-color: #fff; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginEmailInput = document.getElementById('loginEmail');
     const loginPasswordInput = document.getElementById('loginPassword');
     const btnLoginEmail = document.getElementById('btnLoginEmail');
+    const btnRegisterEmail = document.getElementById('btnRegisterEmail');
     const btnLoginGoogle = document.getElementById('btnLoginGoogle');
     const btnLogout = document.getElementById('btnLogout');
     const loginError = document.getElementById('loginError');
@@ -78,16 +79,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 auth.signInWithEmailAndPassword(email, password)
                     .catch(error => {
-                        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-login-credentials') {
-                            auth.createUserWithEmailAndPassword(email, password)
-                                .catch(err => {
-                                    loginError.textContent = err.message;
-                                    loginError.style.display = "block";
-                                });
-                        } else {
-                            loginError.textContent = error.message;
-                            loginError.style.display = "block";
-                        }
+                        loginError.textContent = error.message;
+                        loginError.style.display = "block";
+                    });
+            });
+        }
+
+        if (btnRegisterEmail) {
+            btnRegisterEmail.addEventListener('click', () => {
+                const email = loginEmailInput.value;
+                const password = loginPasswordInput.value;
+                if (!email || !password) {
+                    loginError.textContent = "Please enter email and password.";
+                    loginError.style.display = "block";
+                    return;
+                }
+                auth.createUserWithEmailAndPassword(email, password)
+                    .catch(error => {
+                        loginError.textContent = error.message;
+                        loginError.style.display = "block";
                     });
             });
         }

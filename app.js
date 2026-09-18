@@ -76,8 +76,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnLogout = document.getElementById('btnLogout');
     const loginError = document.getElementById('loginError');
 
+    let authInitialized = false;
+
     if (auth) {
         auth.onAuthStateChanged(user => {
+            if (!authInitialized) {
+                authInitialized = true;
+                const loader = document.getElementById('globalLoader');
+                if (loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 400);
+                }
+            }
+
             if (user) {
                 currentUserUid = user.uid;
                 if (loginOverlay) loginOverlay.classList.remove('active');

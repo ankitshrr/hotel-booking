@@ -745,6 +745,10 @@ input[type=number] {
     border-left-color: var(--color-closed); /* Red */
 }
 
+@keyframes loaderSpin {
+    to { transform: rotate(360deg); }
+}
+
 /* Context Menu */
 .context-menu {
     position: fixed;

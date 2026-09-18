@@ -1604,7 +1604,7 @@ if (btnToggleView) {
             calendarView.style.display = 'none';
             dashboardView.style.display = 'block';
             btnToggleView.innerHTML = '📅 Calendar';
-            renderAdminRooms();
+            renderAdminRooms(true);
             updateDashboardStats();
         } else {
             dashboardView.style.display = 'none';
@@ -1618,114 +1618,225 @@ if (btnToggleView) {
 const dashRoomsContainer = document.getElementById('dashRoomsContainer');
 const btnAddRoomGroup = document.getElementById('btnAddRoomGroup');
 
-function renderAdminRooms() {
+function renderAdminRooms(force = false) {
     if (!dashRoomsContainer) return;
+    // Don't wipe DOM structure if user is actively typing inside room management, unless forced
+    if (!force && document.activeElement && dashRoomsContainer.contains(document.activeElement)) {
+        return;
+    }
     dashRoomsContainer.innerHTML = '';
     
     roomsConfig.forEach((group, gIndex) => {
         const groupDiv = document.createElement('div');
         groupDiv.className = 'admin-group';
         
-        const headerDiv = document.createElement('div');
-        headerDiv.className = 'admin-group-header';
+        // Header row with Icon, Title, Bed count badge & Delete Button
+        const topDiv = document.createElement('div');
+        topDiv.className = 'admin-group-top';
+        
+        const titleWrapper = document.createElement('div');
+        titleWrapper.className = 'admin-group-title-wrapper';
+        
+        const roomIcon = document.createElement('span');
+        roomIcon.className = 'admin-room-icon';
+        roomIcon.textContent = '🏨';
+        
+        const roomTitle = document.createElement('h3');
+        roomTitle.className = 'admin-room-title';
+        roomTitle.textContent = group.groupName || 'Untitled Room';
+        
+        const bedCountBadge = document.createElement('span');
+        bedCountBadge.className = 'admin-bed-count-badge';
+        const bedLen = group.beds ? group.beds.length : 0;
+        bedCountBadge.textContent = `${bedLen} ${bedLen === 1 ? 'Bed' : 'Beds'}`;
+        
+        titleWrapper.appendChild(roomIcon);
+        titleWrapper.appendChild(roomTitle);
+        titleWrapper.appendChild(bedCountBadge);
+        
+        const btnDelGroup = document.createElement('button');
+        btnDelGroup.className = 'btn-delete-group';
+        btnDelGroup.innerHTML = '<span>🗑️</span> Delete Room';
+        btnDelGroup.onclick = () => {
+            if (confirm(`Are you sure you want to delete "${group.groupName || 'this room category'}" and all its beds?`)) {
+                roomsConfig.splice(gIndex, 1);
+                saveAndRender();
+                renderAdminRooms(true);
+            }
+        };
+        
+        topDiv.appendChild(titleWrapper);
+        topDiv.appendChild(btnDelGroup);
+        
+        // Inputs grid for Room Name & Description
+        const gridDiv = document.createElement('div');
+        gridDiv.className = 'admin-group-inputs-grid';
+        
+        // Field 1: Name
+        const fieldName = document.createElement('div');
+        fieldName.className = 'admin-input-field';
+        const labelName = document.createElement('label');
+        labelName.className = 'admin-input-label';
+        labelName.textContent = 'Room / Category Name';
         
         const inputName = document.createElement('input');
         inputName.type = 'text';
-        inputName.value = group.groupName;
-        inputName.placeholder = 'Group Name (e.g. Room 204)';
-        inputName.onchange = (e) => { 
-            roomsConfig[gIndex].groupName = e.target.value; 
-            saveAndRender();
+        inputName.className = 'admin-input';
+        inputName.value = group.groupName || '';
+        inputName.placeholder = 'e.g. Deluxe Room 101';
+        inputName.oninput = (e) => {
+            roomsConfig[gIndex].groupName = e.target.value;
+            roomTitle.textContent = e.target.value || 'Untitled Room';
         };
+        inputName.onchange = () => { 
+            saveAndRender(); 
+        };
+        
+        fieldName.appendChild(labelName);
+        fieldName.appendChild(inputName);
+        
+        // Field 2: Description
+        const fieldDesc = document.createElement('div');
+        fieldDesc.className = 'admin-input-field';
+        const labelDesc = document.createElement('label');
+        labelDesc.className = 'admin-input-label';
+        labelDesc.textContent = 'Description & Details';
         
         const inputDesc = document.createElement('input');
         inputDesc.type = 'text';
-        inputDesc.value = group.groupDesc;
-        inputDesc.placeholder = 'Description (e.g. 4 Bed AC)';
-        inputDesc.onchange = (e) => { 
-            roomsConfig[gIndex].groupDesc = e.target.value; 
-            saveAndRender();
+        inputDesc.className = 'admin-input';
+        inputDesc.value = group.groupDesc || '';
+        inputDesc.placeholder = 'e.g. 4 Bed AC with Balcony';
+        inputDesc.oninput = (e) => {
+            roomsConfig[gIndex].groupDesc = e.target.value;
+        };
+        inputDesc.onchange = () => { 
+            saveAndRender(); 
         };
         
-        headerDiv.appendChild(inputName);
-        headerDiv.appendChild(inputDesc);
-
-        const btnDelGroup = document.createElement('button');
-        btnDelGroup.className = 'btn-delete-group';
-        btnDelGroup.textContent = 'Delete Room';
-        btnDelGroup.onclick = () => {
-            if(confirm('Are you sure you want to delete this entire room and all its beds?')) {
-                roomsConfig.splice(gIndex, 1);
-                saveAndRender();
-            }
-        };
-        headerDiv.appendChild(btnDelGroup);
-
+        fieldDesc.appendChild(labelDesc);
+        fieldDesc.appendChild(inputDesc);
+        
+        gridDiv.appendChild(fieldName);
+        gridDiv.appendChild(fieldDesc);
+        
+        // Beds Section
+        const bedsSection = document.createElement('div');
+        bedsSection.className = 'admin-beds-section';
+        
+        const bedsHeader = document.createElement('div');
+        bedsHeader.className = 'admin-beds-header';
+        bedsHeader.innerHTML = '<span>🛏️ Beds / Units in this Room</span>';
+        bedsSection.appendChild(bedsHeader);
+        
         const bedListDiv = document.createElement('div');
         bedListDiv.className = 'admin-bed-list';
-
+        
         group.beds.forEach((bed, bIndex) => {
             const bedItem = document.createElement('div');
             bedItem.className = 'admin-bed-item';
             
+            // ID input
+            const inputGroup1 = document.createElement('div');
+            inputGroup1.className = 'admin-bed-input-group';
+            const tag1 = document.createElement('span');
+            tag1.className = 'bed-input-tag';
+            tag1.textContent = 'ID:';
+            
             const inputBedId = document.createElement('input');
             inputBedId.type = 'text';
-            inputBedId.value = bed.id;
-            inputBedId.placeholder = 'ID';
-            inputBedId.onchange = (e) => { 
-                roomsConfig[gIndex].beds[bIndex].id = e.target.value; 
-                saveAndRender();
+            inputBedId.className = 'admin-bed-input id-input';
+            inputBedId.value = bed.id || '';
+            inputBedId.placeholder = '101';
+            inputBedId.oninput = (e) => {
+                roomsConfig[gIndex].beds[bIndex].id = e.target.value;
             };
-
+            inputBedId.onchange = () => { 
+                saveAndRender(); 
+            };
+            
+            inputGroup1.appendChild(tag1);
+            inputGroup1.appendChild(inputBedId);
+            
+            // Name input
+            const inputGroup2 = document.createElement('div');
+            inputGroup2.className = 'admin-bed-input-group';
+            const tag2 = document.createElement('span');
+            tag2.className = 'bed-input-tag';
+            tag2.textContent = 'Name:';
+            
             const inputBedName = document.createElement('input');
             inputBedName.type = 'text';
-            inputBedName.value = bed.name;
-            inputBedName.placeholder = 'Name';
-            inputBedName.onchange = (e) => { 
-                roomsConfig[gIndex].beds[bIndex].name = e.target.value; 
-                saveAndRender();
+            inputBedName.className = 'admin-bed-input name-input';
+            inputBedName.value = bed.name || '';
+            inputBedName.placeholder = 'Bed 1';
+            inputBedName.oninput = (e) => {
+                roomsConfig[gIndex].beds[bIndex].name = e.target.value;
             };
-
+            inputBedName.onchange = () => { 
+                saveAndRender(); 
+            };
+            
+            inputGroup2.appendChild(tag2);
+            inputGroup2.appendChild(inputBedName);
+            
+            // Delete bed button
             const btnDelBed = document.createElement('button');
             btnDelBed.className = 'btn-delete-bed';
             btnDelBed.innerHTML = '&times;';
+            btnDelBed.title = 'Delete Bed';
             btnDelBed.onclick = () => {
-                if(confirm('Delete this bed?')) {
+                if (confirm(`Delete bed "${bed.name || bed.id}"?`)) {
                     roomsConfig[gIndex].beds.splice(bIndex, 1);
                     saveAndRender();
+                    renderAdminRooms(true);
                 }
             };
-
-            bedItem.appendChild(inputBedId);
-            bedItem.appendChild(inputBedName);
+            
+            bedItem.appendChild(inputGroup1);
+            bedItem.appendChild(inputGroup2);
             bedItem.appendChild(btnDelBed);
             bedListDiv.appendChild(bedItem);
         });
-
+        
+        bedsSection.appendChild(bedListDiv);
+        
         const btnAddBed = document.createElement('button');
-        btnAddBed.className = 'btn-minimal';
-        btnAddBed.style.cssText = "border: 1px solid var(--glass-border); padding: 0.5rem 1rem; color: var(--text-light); font-size: 0.85rem; margin-top: 0.5rem; cursor: pointer; border-radius: 4px; display: inline-block;";
-        btnAddBed.textContent = '+ Add Bed';
+        btnAddBed.className = 'btn-add-bed';
+        btnAddBed.innerHTML = '<span>+</span> Add Bed';
         btnAddBed.onclick = () => {
-            roomsConfig[gIndex].beds.push({ id: `new_${Date.now()}`, name: 'New Bed' });
+            const bedNum = group.beds ? group.beds.length + 1 : 1;
+            roomsConfig[gIndex].beds.push({ id: `bed_${Date.now().toString().slice(-4)}`, name: `Bed ${bedNum}` });
             saveAndRender();
+            renderAdminRooms(true);
         };
-
-        groupDiv.appendChild(headerDiv);
-        groupDiv.appendChild(bedListDiv);
-        groupDiv.appendChild(btnAddBed);
+        bedsSection.appendChild(btnAddBed);
+        
+        groupDiv.appendChild(topDiv);
+        groupDiv.appendChild(gridDiv);
+        groupDiv.appendChild(bedsSection);
         dashRoomsContainer.appendChild(groupDiv);
     });
 }
 
 if (btnAddRoomGroup) {
     btnAddRoomGroup.addEventListener('click', () => {
+        const nextNum = roomsConfig.length + 1;
         roomsConfig.push({
-            groupName: 'New Room',
-            groupDesc: 'Description',
-            beds: [{ id: `bed_${Date.now()}`, name: 'Bed 1' }]
+            groupName: `Room Category ${nextNum}`,
+            groupDesc: 'Standard Amenities',
+            beds: [{ id: `bed_${Date.now().toString().slice(-4)}`, name: 'Bed 1' }]
         });
         saveAndRender();
+        renderAdminRooms(true);
+    });
+}
+
+const btnSaveRooms = document.getElementById('btnSaveRooms');
+if (btnSaveRooms) {
+    btnSaveRooms.addEventListener('click', () => {
+        saveAndRender();
+        showToast('Room layout saved successfully!', 'success');
     });
 }
 

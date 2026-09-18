@@ -219,13 +219,20 @@
                 </div>
             </div>
 
-            <div class="room-management-section" style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 20px; padding: 2.5rem; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
+            <div class="room-management-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
                     <div>
                         <h2 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 0.25rem;">Room Management</h2>
-                        <p style="color: var(--text-muted); font-size: 0.95rem;">Configure your property layout. All changes sync in real-time to your calendar.</p>
+                        <p style="color: var(--text-muted); font-size: 0.95rem;">Configure your property layout & bed inventory. All changes sync in real-time.</p>
                     </div>
-                    <button id="btnAddRoomGroup" class="btn btn-booked" style="font-size: 1rem; padding: 0.75rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(59,130,246,0.3); transition: all 0.2s;">+ Add New Room Type</button>
+                    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                        <button id="btnSaveRooms" class="btn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 0.75rem 1.25rem; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 12px rgba(16,185,129,0.3); transition: all 0.2s;">
+                            💾 Save All Changes
+                        </button>
+                        <button id="btnAddRoomGroup" class="btn btn-booked" style="font-size: 0.95rem; padding: 0.75rem 1.25rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(59,130,246,0.3); transition: all 0.2s;">
+                            + Add Room Type
+                        </button>
+                    </div>
                 </div>
                 
                 <div id="dashRoomsContainer" style="display: flex; flex-direction: column; gap: 1.5rem;">

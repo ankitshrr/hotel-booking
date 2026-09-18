@@ -588,7 +588,11 @@ input[type=number] {
     transition: all 0.2s;
     font-family: inherit;
     font-size: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    outline: none;
 }
+.btn:focus { outline: none; }
 
 .btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
 .btn:active { transform: translateY(0); }

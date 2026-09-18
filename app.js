@@ -51,8 +51,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginOverlay = document.getElementById('loginOverlay');
     const loginEmailInput = document.getElementById('loginEmail');
     const loginPasswordInput = document.getElementById('loginPassword');
-    const btnLoginEmail = document.getElementById('btnLoginEmail');
-    const btnRegisterEmail = document.getElementById('btnRegisterEmail');
+    const btnMainAuth = document.getElementById('btnMainAuth');
+    const authToggleLink = document.getElementById('authToggleLink');
+    const authTitle = document.getElementById('authTitle');
+    const authSubtitle = document.getElementById('authSubtitle');
+    let isLoginMode = true;
     const btnLoginGoogle = document.getElementById('btnLoginGoogle');
     const btnLogout = document.getElementById('btnLogout');
     const loginError = document.getElementById('loginError');
@@ -96,29 +99,27 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        if (btnLoginEmail) {
-            btnLoginEmail.addEventListener('click', () => {
-                const email = loginEmailInput.value;
-                const password = loginPasswordInput.value;
-                if (!email || !password) {
-                    loginError.textContent = "Please enter email and password.";
-                    loginError.style.display = "block";
-                    return;
+        if (authToggleLink) {
+            authToggleLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                isLoginMode = !isLoginMode;
+                loginError.style.display = "none";
+                if (isLoginMode) {
+                    authTitle.textContent = "Welcome Back";
+                    authSubtitle.textContent = "Please log in to your account";
+                    btnMainAuth.textContent = "Login";
+                    authToggleLink.textContent = "Don't have an account? Sign up";
+                } else {
+                    authTitle.textContent = "Create Account";
+                    authSubtitle.textContent = "Sign up to get started";
+                    btnMainAuth.textContent = "Sign Up";
+                    authToggleLink.textContent = "Already have an account? Log in";
                 }
-                auth.signInWithEmailAndPassword(email, password)
-                    .catch(error => {
-                        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-login-credentials') {
-                            loginError.textContent = "Account not found or incorrect password. Try clicking Register.";
-                        } else {
-                            loginError.textContent = error.message;
-                        }
-                        loginError.style.display = "block";
-                    });
             });
         }
 
-        if (btnRegisterEmail) {
-            btnRegisterEmail.addEventListener('click', () => {
+        if (btnMainAuth) {
+            btnMainAuth.addEventListener('click', () => {
                 const email = loginEmailInput.value;
                 const password = loginPasswordInput.value;
                 if (!email || !password) {
@@ -126,15 +127,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     loginError.style.display = "block";
                     return;
                 }
-                auth.createUserWithEmailAndPassword(email, password)
-                    .catch(error => {
-                        if (error.code === 'auth/email-already-in-use') {
-                            loginError.textContent = "Account already exists! Please click 'Login' instead.";
-                        } else {
-                            loginError.textContent = error.message;
-                        }
-                        loginError.style.display = "block";
-                    });
+
+                if (isLoginMode) {
+                    auth.signInWithEmailAndPassword(email, password)
+                        .then(() => {
+                            alert("Login Successful!");
+                        })
+                        .catch(error => {
+                            if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-login-credentials') {
+                                loginError.textContent = "Account not found or incorrect password.";
+                            } else {
+                                loginError.textContent = error.message;
+                            }
+                            loginError.style.display = "block";
+                        });
+                } else {
+                    auth.createUserWithEmailAndPassword(email, password)
+                        .then(() => {
+                            alert("Account Created & Login Successful!");
+                        })
+                        .catch(error => {
+                            if (error.code === 'auth/email-already-in-use') {
+                                loginError.textContent = "Account already exists! Please log in instead.";
+                            } else {
+                                loginError.textContent = error.message;
+                            }
+                            loginError.style.display = "block";
+                        });
+                }
             });
         }
 
@@ -152,7 +172,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (btnLogout) {
             btnLogout.addEventListener('click', () => {
-                auth.signOut();
+                auth.signOut().then(() => {
+                    alert("Logout Successful!");
+                });
             });
         }
     }

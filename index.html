@@ -13,40 +13,52 @@
 
 <body>
     <!-- Login Modal Overlay (blocks everything until logged in) -->
-    <div class="login-overlay active" id="loginOverlay">
-        <div class="modal login-modal" style="max-width: 400px; padding: 2rem;">
-            <h2 style="font-size: 1.5rem; margin-bottom: 0.25rem; text-align: center;">Room Manager Pro</h2>
-            <p class="modal-subtitle" style="text-align: center; margin-bottom: 1.5rem;">Please log in to continue</p>
+    <div class="login-overlay active" id="loginOverlay" style="backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); background: rgba(10, 10, 15, 0.8);">
+        <div class="modal login-modal" style="max-width: 420px; padding: 2.5rem; background: linear-gradient(145deg, rgba(30, 35, 50, 0.9), rgba(20, 22, 30, 0.95)); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05) inset; transform: translateY(0); transition: all 0.3s ease;">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #6366f1, #a855f7); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem auto; box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                </div>
+                <h2 id="authTitle" style="font-size: 1.75rem; margin-bottom: 0.5rem; text-align: center; font-weight: 700; background: linear-gradient(to right, #fff, #a5b4fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Welcome Back</h2>
+                <p id="authSubtitle" class="modal-subtitle" style="text-align: center; margin-bottom: 0; color: #94a3b8; font-size: 0.95rem;">Please log in to your account</p>
+            </div>
 
             <div class="form-group" style="margin-top: 1rem;">
                 <input type="email" id="loginEmail" placeholder="Email Address" class="input-minimal"
-                    style="width: 100%; margin-bottom: 0.75rem; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); padding: 0.85rem; border-radius: 8px; color: #fff;">
+                    style="width: 100%; margin-bottom: 1rem; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); padding: 1rem 1.25rem; border-radius: 12px; color: #fff; font-size: 1rem; transition: all 0.2s; box-sizing: border-box;">
                 <input type="password" id="loginPassword" placeholder="Password" class="input-minimal"
-                    style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); padding: 0.85rem; border-radius: 8px; color: #fff;">
+                    style="width: 100%; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); padding: 1rem 1.25rem; border-radius: 12px; color: #fff; font-size: 1rem; transition: all 0.2s; box-sizing: border-box;">
             </div>
 
             <div class="action-buttons"
-                style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
-                <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn btn-booked" id="btnLoginEmail" style="flex: 1; font-weight: 700;">Login</button>
-                    <button class="btn btn-available" id="btnRegisterEmail"
-                        style="flex: 1; font-weight: 700; border-color: var(--glass-border); color: #fff;">Register</button>
+                style="margin-top: 2rem; display: flex; flex-direction: column; gap: 1rem;">
+                <div style="display: flex; gap: 0.75rem; flex-direction: column;">
+                    <button class="btn btn-booked" id="btnMainAuth" style="width: 100%; font-weight: 600; padding: 0.875rem; border-radius: 10px; font-size: 1rem; background: linear-gradient(to right, #6366f1, #4f46e5); border: none; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); transition: transform 0.2s, box-shadow 0.2s;">Login</button>
+                    <div style="text-align: center; margin-top: 0.25rem;">
+                        <a href="#" id="authToggleLink" style="color: #a5b4fc; text-decoration: none; font-size: 0.9rem; transition: color 0.2s;">Don't have an account? Sign up</a>
+                    </div>
                 </div>
-                <div style="text-align: center; font-size: 0.85rem; color: var(--text-muted); margin: 0.25rem 0;">— OR —
+                
+                <div style="display: flex; align-items: center; margin: 0.5rem 0;">
+                    <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></div>
+                    <span style="padding: 0 1rem; color: #64748b; font-size: 0.85rem; font-weight: 500;">or</span>
+                    <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></div>
                 </div>
-                <button class="btn btn-available" id="btnLoginGoogle"
-                    style="width: 100%; border-color: #fff; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path
-                            d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1.8-9.4v3.6c-1.9-1.2-3.1-3.3-3.1-5.6 0-3.6 2.8-6.6 6.3-6.6 1.8 0 3.5.7 4.7 1.9l-2.4 2.4c-.6-.5-1.4-.8-2.3-.8-2.1 0-3.8 1.7-3.8 3.8 0 1.2.6 2.3 1.5 3.1z">
-                        </path>
+
+                <button class="btn" id="btnLoginGoogle"
+                    style="width: 100%; background: #ffffff; color: #1e293b; border: none; padding: 0.875rem; border-radius: 10px; font-weight: 600; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.75rem; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, background 0.2s;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                     </svg>
-                    Sign in with Google
+                    Continue with Google
                 </button>
             </div>
 
             <p id="loginError"
-                style="color: #ef4444; font-size: 0.85rem; margin-top: 1rem; text-align: center; display: none;"></p>
+                style="color: #ef4444; font-size: 0.9rem; margin-top: 1.25rem; text-align: center; display: none; background: rgba(239, 68, 68, 0.1); padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);"></p>
         </div>
     </div>
     <div class="app-container">

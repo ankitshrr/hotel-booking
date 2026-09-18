@@ -38,11 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     let auth = null;
+    let db = null;
+    let currentUserUid = null;
     if (typeof firebase !== 'undefined') {
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
         auth = firebase.auth();
+        db = firebase.firestore();
     }
 
     const loginOverlay = document.getElementById('loginOverlay');
@@ -57,11 +60,34 @@ document.addEventListener('DOMContentLoaded', () => {
     if (auth) {
         auth.onAuthStateChanged(user => {
             if (user) {
+                currentUserUid = user.uid;
                 if(loginOverlay) loginOverlay.classList.remove('active');
                 if(btnLogout) btnLogout.style.display = 'block';
-                renderTable();
-                scrollToToday();
+                
+                if (db) {
+                    db.collection('userBookings').doc(currentUserUid).onSnapshot((doc) => {
+                        if (doc.exists) {
+                            let data = doc.data();
+                            if (data.roomsConfig) {
+                                bookings = data.bookings || {};
+                                roomsConfig = data.roomsConfig;
+                            } else {
+                                bookings = data;
+                                roomsConfig = JSON.parse(JSON.stringify(defaultRoomsConfig));
+                            }
+                        } else {
+                            bookings = {};
+                            roomsConfig = JSON.parse(JSON.stringify(defaultRoomsConfig));
+                        }
+                        renderTable();
+                        scrollToToday();
+                    });
+                } else {
+                    renderTable();
+                    scrollToToday();
+                }
             } else {
+                currentUserUid = null;
                 if(loginOverlay) loginOverlay.classList.add('active');
                 if(btnLogout) btnLogout.style.display = 'none';
                 if(roomRows) roomRows.innerHTML = ''; 
@@ -120,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Rooms Configuration
-    const roomsConfig = [
+    const defaultRoomsConfig = [
 
         {
             groupName: 'Room 204',
@@ -204,6 +230,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     ];
 
+    let roomsConfig = JSON.parse(localStorage.getItem('pmsRoomsConfig')) || JSON.parse(JSON.stringify(defaultRoomsConfig));
+
     let dates = [];
     function generateDates() {
         dates = [];
@@ -225,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Bookings State: key = "roomId_isoDate", value = { guestName, status }
-    let bookings = JSON.parse(localStorage.getItem('pmsBookings') || '{}');
+    let bookings = {};
     let currentFileHandle = null;
 
     // Current selection
@@ -477,9 +505,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function saveAndRender() {
-        // Save Locally
-        localStorage.setItem('pmsBookings', JSON.stringify(bookings));
-        renderTable();
+        if (db && currentUserUid) {
+            db.collection('userBookings').doc(currentUserUid).set({
+                bookings: bookings,
+                roomsConfig: roomsConfig
+            }).catch(err => console.error("Error saving to Firestore: ", err));
+        } else {
+            localStorage.setItem('pmsBookings', JSON.stringify(bookings));
+            localStorage.setItem('pmsRoomsConfig', JSON.stringify(roomsConfig));
+        }
+        if (!db) renderTable();
         if (currentFileHandle) autoSaveToExcel();
     }
 
@@ -1047,7 +1082,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     // Clear current bookings
                     bookings = {};
-                    localStorage.setItem('pmsBookings', JSON.stringify(bookings));
+                    saveAndRender();
                     
                     if(btnImport) btnImport.textContent = `Syncing: ${fileHandle.name}`;
                     
@@ -1438,6 +1473,130 @@ document.addEventListener('DOMContentLoaded', () => {
     // Init
     const roomFilterInit = document.getElementById('roomFilter');
     if (roomFilterInit) roomFilterInit.addEventListener('change', renderTable);
+
+    // Admin Panel Logic
+    const btnSettings = document.getElementById('btnSettings');
+    const settingsModal = document.getElementById('settingsModal');
+    const closeSettingsModal = document.getElementById('closeSettingsModal');
+    const btnAdminCancel = document.getElementById('btnAdminCancel');
+    const btnAdminSave = document.getElementById('btnAdminSave');
+    const adminRoomsContainer = document.getElementById('adminRoomsContainer');
+    const btnAdminAddGroup = document.getElementById('btnAdminAddGroup');
+
+    let tempRoomsConfig = [];
+
+    function renderAdminRooms() {
+        adminRoomsContainer.innerHTML = '';
+        tempRoomsConfig.forEach((group, gIndex) => {
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'admin-group';
+            
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'admin-group-header';
+            
+            const inputName = document.createElement('input');
+            inputName.type = 'text';
+            inputName.value = group.groupName;
+            inputName.placeholder = 'Group Name (e.g. Room 204)';
+            inputName.oninput = (e) => { tempRoomsConfig[gIndex].groupName = e.target.value; };
+            
+            const inputDesc = document.createElement('input');
+            inputDesc.type = 'text';
+            inputDesc.value = group.groupDesc;
+            inputDesc.placeholder = 'Description (e.g. 4 Bed AC)';
+            inputDesc.oninput = (e) => { tempRoomsConfig[gIndex].groupDesc = e.target.value; };
+            
+            headerDiv.appendChild(inputName);
+            headerDiv.appendChild(inputDesc);
+
+            const btnDelGroup = document.createElement('button');
+            btnDelGroup.className = 'btn-delete-group';
+            btnDelGroup.innerHTML = '🗑️';
+            btnDelGroup.onclick = () => {
+                tempRoomsConfig.splice(gIndex, 1);
+                renderAdminRooms();
+            };
+
+            const bedListDiv = document.createElement('div');
+            bedListDiv.className = 'admin-bed-list';
+
+            group.beds.forEach((bed, bIndex) => {
+                const bedItem = document.createElement('div');
+                bedItem.className = 'admin-bed-item';
+                
+                const inputBedId = document.createElement('input');
+                inputBedId.type = 'text';
+                inputBedId.value = bed.id;
+                inputBedId.placeholder = 'ID';
+                inputBedId.oninput = (e) => { tempRoomsConfig[gIndex].beds[bIndex].id = e.target.value; };
+
+                const inputBedName = document.createElement('input');
+                inputBedName.type = 'text';
+                inputBedName.value = bed.name;
+                inputBedName.placeholder = 'Name';
+                inputBedName.oninput = (e) => { tempRoomsConfig[gIndex].beds[bIndex].name = e.target.value; };
+
+                const btnDelBed = document.createElement('button');
+                btnDelBed.className = 'btn-delete-bed';
+                btnDelBed.innerHTML = '&times;';
+                btnDelBed.onclick = () => {
+                    tempRoomsConfig[gIndex].beds.splice(bIndex, 1);
+                    renderAdminRooms();
+                };
+
+                bedItem.appendChild(inputBedId);
+                bedItem.appendChild(inputBedName);
+                bedItem.appendChild(btnDelBed);
+                bedListDiv.appendChild(bedItem);
+            });
+
+            const btnAddBed = document.createElement('button');
+            btnAddBed.className = 'btn-minimal';
+            btnAddBed.style.cssText = "border: 1px solid var(--glass-border); padding: 0.25rem 0.5rem; color: var(--text-light); font-size: 0.8rem; margin-top: 0.5rem; cursor: pointer;";
+            btnAddBed.textContent = '+ Add Bed';
+            btnAddBed.onclick = () => {
+                tempRoomsConfig[gIndex].beds.push({ id: `new_${Date.now()}`, name: 'New Bed' });
+                renderAdminRooms();
+            };
+
+            groupDiv.appendChild(headerDiv);
+            groupDiv.appendChild(btnDelGroup);
+            groupDiv.appendChild(bedListDiv);
+            groupDiv.appendChild(btnAddBed);
+            adminRoomsContainer.appendChild(groupDiv);
+        });
+    }
+
+    if (btnSettings) {
+        btnSettings.addEventListener('click', () => {
+            tempRoomsConfig = JSON.parse(JSON.stringify(roomsConfig));
+            renderAdminRooms();
+            settingsModal.classList.add('active');
+        });
+    }
+
+    if (closeSettingsModal) closeSettingsModal.addEventListener('click', () => settingsModal.classList.remove('active'));
+    if (btnAdminCancel) btnAdminCancel.addEventListener('click', () => settingsModal.classList.remove('active'));
+
+    if (btnAdminSave) {
+        btnAdminSave.addEventListener('click', () => {
+            roomsConfig = JSON.parse(JSON.stringify(tempRoomsConfig));
+            saveAndRender();
+            settingsModal.classList.remove('active');
+            alert("Room configurations saved successfully!");
+        });
+    }
+
+    if (btnAdminAddGroup) {
+        btnAdminAddGroup.addEventListener('click', () => {
+            tempRoomsConfig.push({
+                groupName: 'New Room',
+                groupDesc: 'Description',
+                beds: [{ id: `bed_${Date.now()}`, name: 'Bed 1' }]
+            });
+            renderAdminRooms();
+        });
+    }
 
     if (!auth) {
         renderTable();

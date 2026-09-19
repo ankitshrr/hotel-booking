@@ -837,37 +837,39 @@ input[type=number] {
 
 /* Dashboard Room Config - Modern Real-World PMS Design */
 .room-management-section {
-    background: rgba(24, 24, 27, 0.6);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--glass-border);
-    border-radius: 20px;
-    padding: 2rem;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    background: rgba(24, 24, 27, 0.4);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 24px;
+    padding: 2.5rem;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 @media (max-width: 768px) {
     .room-management-section {
-        padding: 1.25rem;
+        padding: 1.5rem;
     }
 }
 
 .admin-group {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 14px;
-    padding: 1.5rem;
+    background: linear-gradient(145deg, rgba(30, 35, 50, 0.4), rgba(20, 22, 30, 0.6));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 2rem;
     position: relative;
-    transition: all 0.25s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1.5rem;
+    box-shadow: 0 10px 20px -5px rgba(0,0,0,0.3);
 }
 
 .admin-group:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.18);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    background: linear-gradient(145deg, rgba(35, 42, 60, 0.5), rgba(25, 28, 40, 0.7));
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 15px 35px -5px rgba(0,0,0,0.5), 0 0 0 1px rgba(99, 102, 241, 0.1) inset;
+    transform: translateY(-2px);
 }
 
 .admin-group-top {
@@ -875,238 +877,265 @@ input[type=number] {
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 0.75rem;
-    padding-bottom: 0.75rem;
+    gap: 1rem;
+    padding-bottom: 1.25rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .admin-group-title-wrapper {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
 }
 
 .admin-room-icon {
-    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 12px;
+    color: #a5b4fc;
 }
 
 .admin-room-title {
-    font-size: 1.15rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: #ffffff;
     margin: 0;
+    letter-spacing: 0.02em;
 }
 
 .admin-bed-count-badge {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    padding: 0.2rem 0.6rem;
+    background: rgba(99, 102, 241, 0.1);
+    color: #a5b4fc;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    padding: 0.25rem 0.75rem;
     border-radius: 20px;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     font-weight: 600;
+    letter-spacing: 0.05em;
 }
 
 .admin-group-inputs-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
     width: 100%;
 }
 
 .admin-input-field {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.6rem;
 }
 
 .admin-input-label {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    color: #94a3b8;
+    letter-spacing: 0.05em;
 }
 
 .admin-input {
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #ffffff;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    font-size: 0.95rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+    padding: 0.875rem 1.25rem;
+    border-radius: 12px;
+    font-size: 1rem;
     width: 100%;
     box-sizing: border-box;
     transition: all 0.2s ease;
     font-family: inherit;
-    line-height: 1.5;
-    height: 46px;
-    display: block;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .admin-input:focus {
     outline: none;
-    border-color: var(--accent);
-    background: rgba(0, 0, 0, 0.6);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    border-color: #6366f1;
+    background: rgba(15, 23, 42, 0.9);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2), inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.admin-input::placeholder {
+    color: #475569;
 }
 
 .admin-beds-section {
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 10px;
-    padding: 1rem;
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 1.25rem;
 }
 
 .admin-beds-header {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.8);
+    color: #cbd5e1;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
+}
+
+.admin-beds-header svg {
+    color: #94a3b8;
 }
 
 .admin-bed-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
+    gap: 1rem;
     width: 100%;
 }
 
 .admin-bed-item {
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    padding: 0.5rem 0.75rem;
-    border-radius: 8px;
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.5rem;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     max-width: 100%;
 }
 
-.admin-bed-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.25);
+.admin-bed-item:focus-within, .admin-bed-item:hover {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: #6366f1;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
 .admin-bed-input-group {
     display: flex;
     align-items: center;
-    gap: 0.3rem;
-    background: rgba(0, 0, 0, 0.3);
-    padding: 0.25rem 0.5rem;
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    gap: 0.4rem;
+    background: rgba(15, 23, 42, 0.6);
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
 }
 
 .bed-input-tag {
     font-size: 0.75rem;
-    color: var(--text-muted);
-    font-weight: 600;
+    color: #64748b;
+    font-weight: 700;
+    text-transform: uppercase;
 }
 
 .admin-bed-input {
     background: transparent;
     border: none;
-    color: #ffffff;
-    font-size: 0.85rem;
-    padding: 0.2rem 0.1rem;
+    color: #e2e8f0;
+    font-size: 0.9rem;
+    padding: 0;
     font-family: inherit;
-    line-height: 1.5;
+    font-weight: 500;
 }
 
 .admin-bed-input:focus {
     outline: none;
-    color: #60a5fa;
+    color: #ffffff;
+}
+
+.admin-bed-input::placeholder {
+    color: #475569;
 }
 
 .admin-bed-input.id-input {
-    width: 55px;
+    width: 60px;
 }
 
 .admin-bed-input.name-input {
-    width: 90px;
+    width: 100px;
 }
 
 @media (max-width: 500px) {
     .admin-bed-item {
-        flex-direction: row;
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+        padding: 0.75rem;
+    }
+    .admin-bed-input-group {
         width: 100%;
         justify-content: space-between;
     }
-    .admin-bed-input.id-input {
-        width: 60px;
-    }
-    .admin-bed-input.name-input {
+    .admin-bed-input.id-input, .admin-bed-input.name-input {
         flex: 1;
         width: auto;
+        text-align: right;
     }
 }
 
 .btn-delete-group {
-    background: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.4);
-    border-radius: 8px;
-    padding: 0.5rem 0.9rem;
-    white-space: nowrap;
-    color: #f87171;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 10px;
+    padding: 0.6rem 1rem;
+    color: #ef4444;
     cursor: pointer;
     font-size: 0.85rem;
     font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    transition: all 0.2s ease;
+    gap: 0.5rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-delete-group:hover {
-    background: rgba(239, 68, 68, 0.3);
-    border-color: #ef4444;
+    background: #ef4444;
     color: #ffffff;
-    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 .btn-delete-bed {
-    background: none;
+    background: rgba(239, 68, 68, 0.1);
     border: none;
     color: #ef4444;
     cursor: pointer;
-    font-size: 1.25rem;
-    line-height: 1;
-    padding: 0 0.25rem;
-    opacity: 0.7;
-    transition: opacity 0.2s;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    margin-left: 0.25rem;
 }
 
 .btn-delete-bed:hover {
-    opacity: 1;
+    background: #ef4444;
+    color: #ffffff;
 }
 
 .btn-add-bed {
     align-self: flex-start;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px dashed rgba(255, 255, 255, 0.2);
-    color: var(--text-light);
-    font-size: 0.85rem;
-    font-weight: 500;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px dashed rgba(99, 102, 241, 0.3);
+    color: #a5b4fc;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.75rem 1.25rem;
+    border-radius: 10px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.5rem;
 }
 
 .btn-add-bed:hover {
-    background: rgba(59, 130, 246, 0.15);
-    border-color: rgba(59, 130, 246, 0.5);
-    color: #60a5fa;
+    background: rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.5);
+    color: #ffffff;
+    transform: translateY(-1px);
 }
 
 @keyframes fadeUp {

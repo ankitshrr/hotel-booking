@@ -1067,12 +1067,12 @@ if (resetSourceBtn) {
 const btnDeleteGlobal = document.getElementById('btnDelete');
 if (btnDeleteGlobal) {
     btnDeleteGlobal.addEventListener('click', () => {
-        if (confirm('Are you sure you want to delete this booking?')) {
+        showConfirm('Delete Booking', 'Are you sure you want to delete this booking?', () => {
             const key = `${activeRoomId}_${activeDateIso}`;
             delete bookings[key];
             saveAndRender();
             closeModal();
-        }
+        });
     });
 }
 
@@ -1259,6 +1259,37 @@ if (btnCalc && calcModal && btnCloseCalc) {
     calcInrNprAmount.addEventListener('input', updateInrMath);
 }
 
+// Custom Confirm Modal Logic
+let currentConfirmAction = null;
+const confirmModal = document.getElementById('confirmModal');
+const confirmModalTitle = document.getElementById('confirmModalTitle');
+const confirmModalMessage = document.getElementById('confirmModalMessage');
+const btnConfirmCancel = document.getElementById('btnConfirmCancel');
+const btnConfirmAction = document.getElementById('btnConfirmAction');
+
+function showConfirm(title, message, onConfirm) {
+    if(!confirmModal) return;
+    confirmModalTitle.textContent = title;
+    confirmModalMessage.textContent = message;
+    currentConfirmAction = onConfirm;
+    confirmModal.classList.add('active');
+}
+
+if (btnConfirmCancel) {
+    btnConfirmCancel.addEventListener('click', () => {
+        confirmModal.classList.remove('active');
+        currentConfirmAction = null;
+    });
+}
+
+if (btnConfirmAction) {
+    btnConfirmAction.addEventListener('click', () => {
+        confirmModal.classList.remove('active');
+        if (currentConfirmAction) currentConfirmAction();
+        currentConfirmAction = null;
+    });
+}
+
 // Init
 const roomFilterInit = document.getElementById('roomFilter');
 if (roomFilterInit) roomFilterInit.addEventListener('change', renderTable);
@@ -1287,6 +1318,17 @@ if (btnToggleView) {
     });
 }
 
+const btnBackToCalendar = document.getElementById('btnBackToCalendar');
+if (btnBackToCalendar) {
+    btnBackToCalendar.addEventListener('click', () => {
+        isDashboardView = false;
+        dashboardView.style.display = 'none';
+        calendarView.style.display = 'block';
+        if (btnToggleView) btnToggleView.innerHTML = '📊 Dashboard';
+        renderTable();
+    });
+}
+
 const dashRoomsContainer = document.getElementById('dashRoomsContainer');
 const btnAddRoomGroup = document.getElementById('btnAddRoomGroup');
 
@@ -1311,7 +1353,7 @@ function renderAdminRooms(force = false) {
         
         const roomIcon = document.createElement('span');
         roomIcon.className = 'admin-room-icon';
-        roomIcon.textContent = '🏨';
+        roomIcon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>';
         
         const roomTitle = document.createElement('h3');
         roomTitle.className = 'admin-room-title';
@@ -1328,13 +1370,13 @@ function renderAdminRooms(force = false) {
         
         const btnDelGroup = document.createElement('button');
         btnDelGroup.className = 'btn-delete-group';
-        btnDelGroup.innerHTML = '<span>🗑️</span> Delete Room';
+        btnDelGroup.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Delete Room';
         btnDelGroup.onclick = () => {
-            if (confirm(`Are you sure you want to delete "${group.groupName || 'this room category'}" and all its beds?`)) {
+            showConfirm('Delete Room', `Are you sure you want to delete "${group.groupName || 'this room category'}" and all its beds?`, () => {
                 roomsConfig.splice(gIndex, 1);
                 saveAndRender();
                 renderAdminRooms(true);
-            }
+            });
         };
         
         topDiv.appendChild(titleWrapper);
@@ -1398,7 +1440,7 @@ function renderAdminRooms(force = false) {
         
         const bedsHeader = document.createElement('div');
         bedsHeader.className = 'admin-beds-header';
-        bedsHeader.innerHTML = '<span>🛏️ Beds / Units in this Room</span>';
+        bedsHeader.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"></path><path d="M2 8h18a2 2 0 0 1 2 2v10"></path><path d="M2 17h20"></path><path d="M6 8v9"></path></svg> Beds / Units in this Room';
         bedsSection.appendChild(bedsHeader);
         
         const bedListDiv = document.createElement('div');
@@ -1455,14 +1497,14 @@ function renderAdminRooms(force = false) {
             // Delete bed button
             const btnDelBed = document.createElement('button');
             btnDelBed.className = 'btn-delete-bed';
-            btnDelBed.innerHTML = '&times;';
+            btnDelBed.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
             btnDelBed.title = 'Delete Bed';
             btnDelBed.onclick = () => {
-                if (confirm(`Delete bed "${bed.name || bed.id}"?`)) {
+                showConfirm('Delete Bed', `Are you sure you want to delete bed "${bed.name || bed.id}"?`, () => {
                     roomsConfig[gIndex].beds.splice(bIndex, 1);
                     saveAndRender();
                     renderAdminRooms(true);
-                }
+                });
             };
             
             bedItem.appendChild(inputGroup1);
@@ -1475,7 +1517,7 @@ function renderAdminRooms(force = false) {
         
         const btnAddBed = document.createElement('button');
         btnAddBed.className = 'btn-add-bed';
-        btnAddBed.innerHTML = '<span>+</span> Add Bed';
+        btnAddBed.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Add Bed';
         btnAddBed.onclick = () => {
             const bedNum = group.beds ? group.beds.length + 1 : 1;
             roomsConfig[gIndex].beds.push({ id: `bed_${Date.now().toString().slice(-4)}`, name: `Bed ${bedNum}` });
